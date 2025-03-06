@@ -1,0 +1,79 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Inicio{% endblock %}
+{% block navbar_extra %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const navbarRight = document.getElementById('navbar-right');
+        if (window.location.pathname === '/') {
+            const syncButton = document.createElement('li');
+            syncButton.className = 'nav-item';
+            syncButton.innerHTML = `
+                <form id="sync-form" method="post" action="{% url 'core:sync_databases' %}">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    <button type="submit" class="nav-link btn btn-link" style="padding: 0;">Sincronizar Bases de Datos</button>
+                </form>
+            `;
+            navbarRight.insertBefore(syncButton, navbarRight.firstChild);
+
+            document.getElementById('sync-form').addEventListener('submit', function(event) {
+                event.preventDefault();  // Evitar el comportamiento predeterminado del formulario
+                fetch("{% url 'core:sync_databases' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Sincronización completada con éxito.');
+                    } else {
+                        alert('Error en la sincronización: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error en la sincronización: ' + error.message);
+                });
+            });
+        }
+    });
+</script>
+<style>
+    .nav-item {
+        margin-right: 15px; /* Ajusta este valor según sea necesario */
+      }
+</style>
+{% endblock %}
+{% block content %}
+<header class="text-white" style="background-image: url('{% static 'core/assets/fondoHome.png' %}'); background-repeat: repeat; background-position: center;">
+    <div class="container px-4 text-center">
+        <h1 class="fw-bolder">SANA Realtime WebApp</h1>
+        <p class="lead">Aplicación web oficial para uso del personal de calidad.</p>
+    </div>
+</header>
+
+<section id="about">
+    <div class="container px-4">
+        <div class="row gx-4 justify-content-center">
+            <div class="col-lg-8">
+                <h2>Acerca de la app</h2>
+                <p class="lead">
+                    Aplicación web diseñada para automatizar procesos de captura de información en procesos. Su funcionamiento se basa en la integración de tecnologías avanzadas que permiten recopilar, procesar y analizar datos en tiempo real.
+                </p>
+                <p class="lead">
+                    Los operarios pueden ingresar datos fácilmente a través de una interfaz intuitiva (tablet, laptop o pc), lo que reduce errores y optimiza el flujo de trabajo. La aplicación genera reportes automáticos, proporciona visibilidad instantánea del estado de los procesos y facilita la toma de decisiones informadas. Con Sana Realtime WebApp se puede mejorar su eficiencia operativa y reducir costos, transformando la manera en que gestionan la información.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+<footer class="bg-dark text-white py-1">
+    <div class="container text-center">
+        <div class="mt-4">
+            <p>&copy; {{ current_year }} Sana Premium Foods. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</footer>
+{% endblock %}

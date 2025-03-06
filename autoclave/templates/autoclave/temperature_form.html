@@ -1,0 +1,152 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+Agregar temperatura
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <h4 class="mb-4">Agregar Temperatura del Autoclave</h4>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label for="id_maquinaria" class="form-label">Autoclave</label>
+            <select name="id_maquinaria" id="id_maquinaria" class="form-select {% if form.id_maquinaria.errors %}is-invalid{% endif %}">
+                <option value="" disabled {% if not form.id_maquinaria.value %}selected{% endif %}>Seleccione una Autoclave</option>
+                {% for value, label in form.id_maquinaria.field.choices %}
+                    <option value="{{ value }}" {% if value == form.id_maquinaria.value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+            {% for error in form.id_maquinaria.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Campo Fecha -->
+        <div class="mb-3">
+            <label for="fecha" class="form-label">Fecha</label>
+            <input type="date" class="form-control {% if form.fecha.errors %}is-invalid{% endif %}" name="fecha" id="fecha" value="{{ form.fecha.value }}">
+            {% for error in form.fecha.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Campo Hora -->
+        <div class="mb-3">
+            <label for="hora" class="form-label">Hora</label>
+            <input type="time" class="form-control {% if form.hora.errors %}is-invalid{% endif %}" name="hora" id="hora" value="{{ form.hora.value }}">
+            {% for error in form.hora.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Campo Temperatura en °C -->
+        <div class="mb-3">
+            <label for="temp_c" class="form-label">Temperatura (°C)</label>
+            <input type="number" step="any" min="0" max="150" class="form-control {% if form.temp_c.errors %}is-invalid{% endif %}" name="temp_c" id="temp_c" value="{{ form.temp_c.value }}" onkeypress="return isMinusOrNumberKey(event)" oninput="convertToFahrenheit()">
+            {% for error in form.temp_c.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <!-- Campo Temperatura en °F -->
+        <div class="mb-3">
+            <label for="temp_f" class="form-label">Temperatura (°F)</label>
+            <input type="number" step="any" min="0" max="150" class="form-control {% if form.temp_f.errors %}is-invalid{% endif %}" name="temp_f" id="temp_f" value="{{ form.temp_f.value }}" readonly>
+            {% for error in form.temp_f.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Campo Temperatura del Termómetro en °C -->
+        <div class="mb-3">
+            <label for="temp_termometro_c" class="form-label">Temperatura Termómetro (°C)</label>
+            <input type="number" step="any" min="0" max="150" class="form-control {% if form.temp_termometro_c.errors %}is-invalid{% endif %}" name="temp_termometro_c" id="temp_termometro_c" value="{{ form.temp_termometro_c.value }}" onkeypress="return isMinusOrNumberKey(event)" oninput="convertTermometroToFahrenheit()">
+            {% for error in form.temp_termometro_c.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <!-- Campo Temperatura del Termómetro en °F -->
+        <div class="mb-3">
+            <label for="temp_termometro_f" class="form-label">Temperatura Termómetro (°F)</label>
+            <input type="number" step="any" min="0" max="150" class="form-control {% if form.temp_termometro_f.errors %}is-invalid{% endif %}" name="temp_termometro_f" id="temp_termometro_f" value="{{ form.temp_termometro_f.value }}" readonly>
+            {% for error in form.temp_termometro_f.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Campo Observaciones -->
+        <div class="mb-3">
+            <label for="observaciones" class="form-label">Observaciones</label>
+            <textarea class="form-control {% if form.observaciones.errors %}is-invalid{% endif %}" name="observaciones" id="observaciones" rows="4">{{ form.observaciones.value }}</textarea>
+            {% for error in form.observaciones.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Botón de Guardar -->
+        <button type="submit" class="btn btn-primary">Guardar</button>
+    </form>
+
+    <!-- Enlace para volver al listado -->
+    <a href="{% url 'autoclave:temperature_list' %}" class="btn btn-secondary mt-3">Volver al listado</a>
+</div>
+
+<script>
+    function isMinusOrNumberKey(evt) {
+        var charCode = (evt.which) ? evt.which : event.keyCode;
+        var inputValue = document.getElementById('temp_c').value;
+        if (charCode == 45 && inputValue.length == 0) {
+            return true;
+        }
+        if (charCode == 46 || (charCode >= 48 && charCode <= 57)) {
+            return true;
+        }
+        return false; 
+    }
+    
+    function convertToFahrenheit() {
+        var tempC = parseFloat(document.getElementById('temp_c').value);
+        if (!isNaN(tempC)) {
+            var tempF = (tempC * 9/5) + 32;
+            document.getElementById('temp_f').value = tempF.toFixed(1);
+        } else {
+            document.getElementById('temp_f').value = ''; 
+        }
+    }
+    
+    function convertTermometroToFahrenheit() {
+        var tempTermometroC = parseFloat(document.getElementById('temp_termometro_c').value);
+        if (!isNaN(tempTermometroC)) {
+            var tempTermometroF = (tempTermometroC * 9/5) + 32;
+            document.getElementById('temp_termometro_f').value = tempTermometroF.toFixed(1);
+        } else {
+            document.getElementById('temp_termometro_f').value = ''; 
+        }
+    }
+    // Establecer la fecha y hora actuales en los campos
+    document.addEventListener('DOMContentLoaded', function() {
+        var fechaInput = document.getElementById('fecha');
+        var horaInput = document.getElementById('hora');
+
+        // Establecer la fecha actual (formato YYYY-MM-DD)
+        if (!fechaInput.value) {
+            var today = new Date().toISOString().split('T')[0];  // Obtenemos solo la fecha
+            fechaInput.value = today;
+        }
+
+        // Establecer la hora actual (formato HH:MM)
+        if (!horaInput.value) {
+            var now = new Date();
+            var hours = now.getHours().toString().padStart(2, '0');  // Aseguramos que la hora tenga dos dígitos
+            var minutes = now.getMinutes().toString().padStart(2, '0');  // Aseguramos que los minutos tengan dos dígitos
+            var time = hours + ':' + minutes;
+            horaInput.value = time;
+        }
+    });
+</script>
+
+{% endblock %}

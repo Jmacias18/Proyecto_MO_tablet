@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>{% block title %}Sana Premium Foods{% endblock %}</title>
+    {% load static %}
+    <link rel="icon" type="image/x-icon" href="{% static 'core/assets/favicon.ico' %}" />
+    <link href="{% static 'core/css/styles.css' %}" rel="stylesheet"/>
+    {% load i18n %}
+    <!-- Fuentes -->
+    <link href="https://fonts.googleapis.com/css?family=Raleway:400,400i,700,700i" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lora:400,400i,700,700i" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Estilos adicionales -->
+    <link href="{% static 'core/vendor/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'core/css/main.css' %}" rel="stylesheet">
+</head>
+<body id="page-top">
+    <!-- Navegación -->
+    <nav class="navbar navbar-expand-lg fixed-top" id="mainNav" style="border-bottom: 2px solid #ccc;"> 
+        <div class="container px-4">
+            <a class="navbar-brand" href="{% url 'core:home' %}">
+                <img src="{% static 'core/assets/logosana.jpg' %}" alt="Sana Premium Foods Logo" height="40">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav me-auto ms-3">
+                    {% if request.user.is_authenticated %}
+                        {% if 'Produccion' in user_groups or 'IT' in user_groups %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Producción
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'production:production' %}">Registros de Paros de Producción</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'horas_procesos:gestion_horas_procesos' %}">Horas Procesos</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'horas_procesos:empleados_por_departamento' %}">Lista De Asistencia</a></li>
+                                    {% if request.user.is_staff %}
+                                    <li><a class="dropdown-item" href="{% url 'production:registro' %}">Catalogo De Procesos</a></li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                        {% endif %}
+                        {% if 'Calidad' in user_groups or 'IT' in user_groups %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Calidad
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'autoclave:temperature_list' %}">Temperaturas Autoclave</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'esterilizadores:tempester' %}">Temperaturas Esterilizador</a></li> 
+                                    <li><a class="dropdown-item" href="{% url 'temperature:temperature' %}">Temperaturas Generales</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                    {% if request.user.is_superuser %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'usuarios:user_list' %}">Usuarios</a></li>
+                    {% endif %}
+                    {% if request.user.is_staff %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'procesos:procesos_list' %}">Procesos</a></li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav ms-auto" id="navbar-right"> 
+                    {% if not request.user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Acceder</a></li>
+                    {% else %}
+                    <li class="nav-item">
+                        <form id="logout-form" method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-link btn btn-link" style="padding: 0;">{% trans "Log out" %}</button>
+                        </form>
+                    </li>
+                    {% endif %}
+                </ul>
+                {% block navbar_extra %}{% endblock %}
+            </div>
+        </div>
+    </nav>
+    
+    {% block content %}{% endblock %}
+
+    <!-- Bootstrap y js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,519 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Gestión de Procesos{% endblock %}
+{% block head %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    
+{% endblock %}
+{% block navbar_extra %}
+
+<script>
+    function actualizarResumenAsistencia() {
+        const resumen = {
+            F: 0,
+            D: 0,
+            P: 0,
+            RT: 0,
+            V: 0,
+            INC: 0,
+            S: 0,
+            B: 0,
+            R: 0,
+            NI: 0,
+            ASI: 0
+        };
+        const filasEmpleados = Array.from(document.querySelectorAll('#empleados_tbody tr')).filter(fila => fila.style.display !== 'none');
+    
+        filasEmpleados.forEach(fila => {
+            const codigoEmp = fila.getAttribute('data-codigo_emp');
+            const selectInasistencia = fila.querySelector(`select[name="tipo_inasistencia_${codigoEmp}"]`);
+            const value = selectInasistencia.value;
+            if (resumen.hasOwnProperty(value)) {
+                resumen[value]++;
+            }
+        });
+    
+        for (const key in resumen) {
+            const spanElement = document.getElementById(`resumen-${key}`);
+            if (spanElement) {
+                spanElement.textContent = resumen[key];
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const resumenAsistencia = document.getElementById('resumen-asistencia');
+        const deptoSelect = document.getElementById('depto_select');
+        const searchContainer = document.getElementById('search-container');
+        const empleadosMotivo = {{ empleados_motivo|safe }};
+    
+        // Función para obtener el día de la semana en español
+        function obtenerDiaSemanaEnEspanol(diaIngles) {
+            const diasSemana = {
+                "Sunday": "Domingo",
+                "Monday": "Lunes",
+                "Tuesday": "Martes",
+                "Wednesday": "Miercoles",
+                "Thursday": "Jueves",
+                "Friday": "Viernes",
+                "Saturday": "Sabado"
+            };
+            return diasSemana[diaIngles];
+        }
+    
+        // Función para verificar si el día actual es un día de descanso para el turno del empleado
+        function esDiaDescanso(diasDescanso) {
+            const diaActualIngles = new Date().toLocaleString('en-US', { weekday: 'long' });
+            const diaActualEspanol = obtenerDiaSemanaEnEspanol(diaActualIngles);
+            return diasDescanso.includes(diaActualEspanol);
+        }
+    
+        // Función para actualizar el resumen de asistencia
+        function actualizarResumenAsistencia() {
+            const resumen = {
+                F: 0,
+                D: 0,
+                P: 0,
+                RT: 0,
+                V: 0,
+                INC: 0,
+                S: 0,
+                B: 0,
+                R: 0,
+                NI: 0,
+                ASI: 0
+            };
+            const selectedDepto = deptoSelect.value;
+            const filasEmpleados = Array.from(document.querySelectorAll('#empleados_tbody tr')).filter(fila => fila.style.display !== 'none' && fila.getAttribute('data-depto') === selectedDepto);
+    
+            filasEmpleados.forEach(fila => {
+                const codigoEmp = fila.getAttribute('data-codigo_emp');
+                const selectInasistencia = fila.querySelector(`select[name="tipo_inasistencia_${codigoEmp}"]`);
+                const value = selectInasistencia.value;
+                if (resumen.hasOwnProperty(value)) {
+                    resumen[value]++;
+                }
+            });
+    
+            for (const key in resumen) {
+                const spanElement = document.getElementById(`resumen-${key}`);
+                if (spanElement) {
+                    spanElement.textContent = resumen[key];
+                }
+            }
+        }
+    
+        function mostrarResumenAsistencia() {
+            if (deptoSelect.value) {
+                resumenAsistencia.style.display = 'block';
+                searchContainer.style.display = 'block';
+                actualizarResumenAsistencia(); // Llamar a la función solo cuando se selecciona un departamento
+            } else {
+                resumenAsistencia.style.display = 'none';
+                searchContainer.style.display = 'none';
+            }
+        }
+    
+        // Evento para actualizar el resumen de asistencia cuando se cambia el departamento seleccionado
+        deptoSelect.addEventListener('change', mostrarResumenAsistencia);
+    
+        deptoSelect.addEventListener('change', () => {
+            actualizarResumenAsistencia();
+            mostrarResumenAsistencia();
+        });
+    
+        document.querySelectorAll('select[name^="tipo_inasistencia_"]').forEach(select => {
+            select.addEventListener('change', actualizarResumenAsistencia);
+        });
+    
+        // Inicializar el resumen al cargar la página
+        actualizarResumenAsistencia();
+        mostrarResumenAsistencia();
+    
+        if (window.location.pathname === '/horas_procesos/gestion_horas_procesos/') {
+            const navbar = document.querySelector('.navbar-nav.ms-auto');
+            const logoutButton = navbar.querySelector('form[action="/accounts/logout/"]').closest('li');
+            const syncButton = document.createElement('li');
+            syncButton.className = 'nav-item';
+            syncButton.innerHTML = `
+                <button id="sync-to-server-button" class="nav-link btn btn-link" style="padding: 0;">Sincronizar Procesos</button>
+            `;
+            navbar.insertBefore(syncButton, logoutButton);
+    
+            document.getElementById('sync-to-server-button').addEventListener('click', function (event) {
+                event.preventDefault(); // Evitar el comportamiento predeterminado del botón
+                fetch("{% url 'horas_procesos:sync_to_server' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Ocurrió un error durante la sincronización.');
+                    });
+            });
+        }
+    });
+    
+    function mostrarAnimacionCarga() {
+        const loadingSpinner = document.getElementById('loading-spinner');
+        if (loadingSpinner) {
+            loadingSpinner.style.display = 'block';
+        }
+    }
+    
+    function ocultarAnimacionCarga() {
+        const loadingSpinner = document.getElementById('loading-spinner');
+        if (loadingSpinner) {
+            loadingSpinner.style.display = 'none';
+        }
+    }
+    
+    // Validar el formulario al enviarlo
+    function validarFormulario() {
+        if (validarHorasRegistradas() && validartotalhoras()) {
+            mostrarAnimacionCarga();
+            return true;
+        }
+        return false;
+    }
+</script>
+{% endblock %}
+{% block content %}
+<style>
+    .input-large {
+        width: 50px; /* Ajusta el tamaño según tus necesidades */
+    }
+    
+    .loading-spinner {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1050; /* Asegúrate de que esté por encima de otros elementos */
+        background-color: rgba(255, 255, 255, 0.8); /* Fondo semitransparente */
+        padding: 20px;
+        border-radius: 10px;
+    }
+    .alerta-centrada {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1050;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        max-width: 80%;
+        max-height: 80%;
+        overflow-y: auto;
+        background-color: white;
+        border: 1px solid #ccc;
+    }
+    
+    .alerta-centrada .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+    }
+    .nav-item {
+        margin-right: 15px; /* Ajusta este valor según sea necesario */
+    }
+    .table-bordered th, .table-bordered td {
+        border: 2px solid #000; /* Aumentar el grosor del borde */
+    }
+    
+    .form-control {
+        border: 2px solid #000; /* Aumentar el grosor del borde de los campos de entrada */
+    }
+    .form-check-input {
+        border: 2px solid #000; /* Aumentar el grosor del borde de los checkboxes */
+    }
+    #resumen-asistencia {
+        display: no;
+        align-items: center;
+        gap: 10px;
+    }
+    #resumen-asistencia h4 {
+        font-size: 1rem; /* Ajustar el tamaño de fuente para que coincida con los elementos <li> */
+        margin: 0;
+    }
+    #resumen-asistencia ul {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    #resumen-asistencia li {
+        margin-right: 15px;
+        font-size: 1rem; /* Ajustar el tamaño de fuente para que coincida con el encabezado <h4> */
+    }
+    .sticky-header {
+        position: sticky;
+        top: 60px; /* Ajusta este valor según la altura de tu navbar */
+        background-color: white;
+        z-index: 1000;
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+    }
+    
+    .sticky-summary {
+        position: sticky;
+        top: 60px; /* Ajusta este valor según la altura de tu navbar */
+        background-color: white;
+        z-index: 999;
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+        padding: 10px;
+    }
+
+    .fixed-button-container {
+        position: fixed;
+        top: 100px; /* Ajusta este valor según sea necesario */
+        left: 20px; /* Ajusta este valor según sea necesario */
+        z-index: 1000;
+    }
+    .falta { background-color: red; }
+    .asistencia { background-color: green; }
+    .permiso { background-color: pink; }
+    .descanso { background-color: lightblue; }
+    .retardo { background-color: yellow; }
+    .vacaciones { background-color: fuchsia; }
+    .suspension { background-color: orange; }
+    .baja { background-color: cyan; }
+    .renuncia { background-color: cyan; }
+    .nuevo_ingreso { background-color: lightgreen; }
+    .incapacidad { background-color: brown; }
+</style>
+<!-- filepath: /c:/proyecto_Moo/horas_procesos/templates/horas_procesos/gestion_horas_procesos.html -->
+<div class="container mt-4">
+    <h1 class="text-center my-4">Gestión de Procesos</h1>
+    {% comment %} <a href="{% url 'horas_procesos:display_employees' %}" class="btn btn-secondary">Lista de Empleados</a> {% endcomment %}
+   
+    <div id="alerta" class="alerta-centrada" style="display: none;">
+        <button class="close-btn" onclick="cerrarAlerta()">×</button>
+        <span class="alerta-mensaje"></span>
+    </div>
+    <form id="horas-procesos-form" method="POST" action="{% url 'horas_procesos:gestion_horas_procesos' %}" onsubmit="return validarFormulario()">
+        {% csrf_token %}
+        
+        <h4 class="text-center my-4">Reporte Diario de Coordinador</h4>
+        <div class="mb-4">
+            <label for="fecha" class="form-label">Fecha:</label>
+            <input type="date" id="fecha" name="fecha" class="form-control" value="{{ fecha_seleccionada|date:'Y-m-d' }}">
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{% url 'horas_procesos:actualizar_horas_procesos' %}" class="btn btn-primary">Administracion de Registros</a>
+        </div>
+        
+        <div class="mb-4">
+            <label for="depto_select" class="form-label">Selecciona un Departamento:</label>
+            <select id="depto_select" class="form-select" name="departamento" onchange="filtrarEmpleados()">
+                <option value="" selected="">Departamento</option>
+                {% for departamento in departamentos %}
+                    {% if departamento.id_departamento in departamentos_a_mostrar %}
+                        <option value="{{ departamento.id_departamento }}">{{ departamento.descripcion }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <!-- Campo de búsqueda -->
+        <div class="mb-4" id="search-container" style="display: none;">
+            <input type="text" id="search" class="form-control" placeholder="Buscar por nombre o No.Emp" onkeyup="buscarEmpleado()">
+        </div>
+        <div id="empleados_container" class="mb-4"></div>
+        <div class="mb-4">
+            <p id="total_empleados" class="form-label" style="display: none;">Total de Empleados: 0</p>   
+        </div>
+        <div class="mb-4">
+            <input type="checkbox" id="copy-all-checkbox" class="form-check-input copy-all-checkbox" data-depto="" onchange="handleCopyAllCheckboxChange(event)" style="display: none;">
+            <label for="copy-all-checkbox" id="copy-all-label" style="display: none;">Copiar Horas a Todo el Departamento</label>
+        </div>
+        
+        
+        <div id="tabla_empleados" class="table-wrapper" style="display: none;">
+            <div class="fixed-button-container">
+                <button type="button" class="btn btn-secondary" id="deshacer-btn" onclick="deshacerCambio()">Deshacer</button>
+            </div>
+            <table class="table table-bordered table-sm">
+                <thead class="thead-dark">
+                    <td colspan="24" class="text-start sticky-summary">
+                        <div id="resumen-asistencia" style="display: block;">
+                            <h4 class="text-center">RESUMEN DE ASISTENCIA:</h4>
+                            <ul class="list-unstyled text-center">
+                                <li>FALTA: <span id="resumen-F">0</span></li>
+                                <li>DESCANSO: <span id="resumen-D">0</span></li>
+                                <li>PERMISO: <span id="resumen-P">0</span></li>
+                                <li>RETARDO: <span id="resumen-RT">0</span></li>
+                                <li>VACACIONES: <span id="resumen-V">0</span></li>
+                                <li>INCAPACIDAD: <span id="resumen-INC">0</span></li>
+                                <li>SUSPENCION: <span id="resumen-S">0</span></li>
+                                <li>BAJA: <span id="resumen-B">0</span></li>
+                                <li>RENUNCIA: <span id="resumen-R">0</span></li>
+                                <li>NUEVO INGRESO: <span id="resumen-NI">0</span></li>
+                                <li>ASISTENCIA: <span id="resumen-ASI">0</span></li>
+                            </ul>
+                        </div>
+                    </td>
+                    <tr>
+                        <th class="sticky-header"></th>
+                        <th class="sticky-header">No.Emp</th>
+                        <th class="sticky-header">Empleado</th>
+                        <th class="sticky-header">Departamento</th>
+                        <th class="sticky-header">Inasistencia</th>
+                        <th class="sticky-header">Horarios</th>
+                        {% for i in rango_procesos %}
+                            <th class="sticky-header">
+                                <select class="form-select form-select-sm" name="proceso{{ i }}_header" id="proceso{{ i }}_header" onchange="toggleProcesoInputs({{ i }})">
+                                    <option value="" disabled selected>Proceso {{ i }}</option>
+                                    {% for proceso in procesos %}
+                                    <option value="{{ proceso.id_pro }}">{{ proceso.nombre_pro }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select class="form-select form-select-sm mt-2" name="producto{{ i }}_header" id="producto{{ i }}_header">
+                                    <option value="" disabled selected>Producto</option>
+                                    {% for producto in productos %}
+                                    <option value="{{ producto.ID_Producto }}">{{ producto.ID_Producto }} - {{ producto.DescripcionProd }} - {{ producto.Cliente }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="checkbox" class="form-check-input delete-checkbox-header" id="delete-checkbox-header-{{ i }}" data-proceso="{{ i }}" onchange="handleDeleteHeaderCheckboxChange(event)">
+                                <label for="delete-checkbox-header-{{ i }}">
+                                    <img src="/static/icons/borrar.png" alt="Borrar Horas" style="width: 15px; height: 15px;">
+                                </label>
+                            </th>
+                        {% endfor %}
+                        <th class="sticky-header">Horas Extras</th>
+                        <th class="sticky-header">Total</th>
+                        <th class="sticky-header">No.Emp</th>
+                    </tr>
+                </thead>
+                <tbody id="empleados_tbody">
+                    {% for empleado in empleados %}
+                    <tr data-depto="{{ empleado.id_departamento }}" data-depto-descripcion="{{ empleado.descripcion_departamento }}" data-codigo_emp="{{ empleado.codigo_emp }}" data-id_turno="{{ empleado.id_turno }}" data-dias_descanso="{{ empleado.dias_descanso|join:',' }}" data-es_descanso="{{ empleado.es_descanso }}">
+                        <td class="employee-number">{{ forloop.counter }}</td>
+                        <td>{{ empleado.codigo_emp }}</td>
+                        <td>{{ empleado.nombre_emp }}</td>
+                        <td>{{ empleado.descripcion_departamento }}</td>
+                        <td>
+                            <div style="display: none;">
+                                empleado.tipo_inasistencia: {{ empleado.tipo_inasistencia }},
+                                {% for tipo in tipos_inasistencia %}
+                                    tipo.ID_Asis: {{ tipo.ID_Asis }},
+                                {% endfor %}
+                            </div>
+                            <select class="form-select form-select-sm" name="tipo_inasistencia_{{ empleado.codigo_emp }}" onchange="toggleInputs('{{ empleado.codigo_emp }}'); applyColorClass(this);">
+                                {% for tipo in tipos_inasistencia %}
+                                    <option value="{{ tipo.ID_Asis }}" {% if empleado.tipo_inasistencia == tipo.ID_Asis %}selected{% endif %}>{{ tipo.Descripcion }}</option>
+                                {% endfor %}
+                            </select>   
+                        </td>
+                        <td>
+                            {% for turno in turnos %}
+                                {% if turno.id == empleado.id_turno %}
+                                    <div>Turno: {{ turno.nombre }}</div>
+                                    <div>Horario: {{ turno.horario }}</div>
+                                    <div>Descanso: {{ turno.descanso }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        {% for i in rango_procesos %}
+                        <td>
+                            <!-- Dentro del loop que genera las filas de empleados -->
+
+                            <!-- Dentro del loop que genera las filas de empleados -->
+
+                            <input type="checkbox" class="form-check-input comida-checkbox" data-proceso="${i + 1}" data-emp="${empleado.codigo_emp}" name="comida_proceso${i + 1}_${empleado.codigo_emp}" onchange="handleComidaCheckboxChange(event)">
+                            <input type="hidden" name="comida_proceso${i + 1}_${empleado.codigo_emp}_hidden" value="off">
+                            <label for="comida-checkbox">
+                                <img src="/static/icons/hora_comida.png" alt="Comida" style="width: 15px; height: 15px;">
+                            </label>
+
+                            <input type="time" class="form-control form-control-sm mb-2" name="inicio_proceso{{ i }}_{{ empleado.codigo_emp }}" placeholder="Inicio" disabled step="60" onchange="ajustarHoraFin('{{ empleado.codigo_emp }}', {{ i }})">
+                            <input type="time" class="form-control form-control-sm mb-2" name="fin_proceso{{ i }}_{{ empleado.codigo_emp }}" placeholder="Fin" disabled step="60" onchange="calcularTotalHoras('{{ empleado.codigo_emp }}', {{ i }})">
+                            <input type="text" class="form-control form-control-sm mb-2" name="total_proceso{{ i }}_{{ empleado.codigo_emp }}" readonly>
+                            <input type="checkbox" class="form-check-input delete-checkbox" id="delete-checkbox-{{ i }}-{{ empleado.codigo_emp }}" data-proceso="{{ i }}" data-emp="{{ empleado.codigo_emp }}" onchange="handleDeleteCheckboxChange(event)">
+                            <label for="delete-checkbox">
+                                <img src="/static/icons/borrar.png" alt="Borrar Horas" style="width: 15px; height: 15px;">
+                            </label>
+                        </td>
+                        {% endfor %}
+                        <td>
+                            <input type="number" class="form-control form-control-sm mb-2" name="horas_extras_{{ empleado.codigo_emp }}"  step="0" onchange="calcularTotalHoras('{{ empleado.codigo_emp }}')">
+                        </td>
+                        
+                        <td>
+                            <input type="text" class="form-control form-control-sm input-large" name="total_{{ empleado.codigo_emp }}" readonly>
+                        </td>
+                        <td>{{ empleado.codigo_emp }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="6" class="text-end"><strong>Total Horas:</strong></td>
+                        {% for i in rango_procesos %}
+                        <td id="total_proceso{{ i }}" class="text-center">0.00</td>
+                        {% endfor %}
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div id="total_procesos_container"></div> <!-- Añadido el contenedor total_procesos_container -->
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary" id="guardar-btn">Guardar</button>
+        </div>
+    </form>
+    <div id="loading-spinner" class="loading-spinner" style="display: none;">
+        <div class="spinner-border" role="status">
+            <span class="visualmente-hidden"></span>
+        </div>
+    </div>
+</div>
+{% if messages %}
+    <div>
+        {% for message in messages %}
+            {% if 'sync' not in message.tags %}
+                <!-- Modal de respuesta -->
+                <div class="modal fade" id="responseModal" tabindex="-1" aria-labelledby="responseModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="responseModalLabel">Mensaje</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body" id="responseModalBody">
+                                {{ message }}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var responseModal = new bootstrap.Modal(document.getElementById('responseModal'));
+            responseModal.show();
+        });
+    </script>
+{% endif %}
+<script src="{% static 'horas_procesos/js/gestion_horas_procesos.js' %}"></script>
+{% endblock %}

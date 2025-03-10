@@ -25,7 +25,8 @@
             B: 0,
             R: 0,
             NI: 0,
-            ASI: 0
+            ASI: 0,
+            DE: 0
         };
         const filasEmpleados = Array.from(document.querySelectorAll('#empleados_tbody tr')).filter(fila => fila.style.display !== 'none');
     
@@ -86,7 +87,8 @@
                 B: 0,
                 R: 0,
                 NI: 0,
-                ASI: 0
+                ASI: 0,
+                DE: 0
             };
             const selectedDepto = deptoSelect.value;
             const filasEmpleados = Array.from(document.querySelectorAll('#empleados_tbody tr')).filter(fila => fila.style.display !== 'none' && fila.getAttribute('data-depto') === selectedDepto);
@@ -99,7 +101,6 @@
                     resumen[value]++;
                 }
             });
-    
             for (const key in resumen) {
                 const spanElement = document.getElementById(`resumen-${key}`);
                 if (spanElement) {
@@ -297,6 +298,10 @@
     .renuncia { background-color: cyan; }
     .nuevo_ingreso { background-color: lightgreen; }
     .incapacidad { background-color: brown; }
+    .descanso_extra {
+        background-color: #d8b2ff; /* Morado claro */
+    }
+    
 </style>
 <!-- filepath: /c:/proyecto_Moo/horas_procesos/templates/horas_procesos/gestion_horas_procesos.html -->
 <div class="container mt-4">
@@ -366,6 +371,7 @@
                                 <li>RENUNCIA: <span id="resumen-R">0</span></li>
                                 <li>NUEVO INGRESO: <span id="resumen-NI">0</span></li>
                                 <li>ASISTENCIA: <span id="resumen-ASI">0</span></li>
+                                <li>DESCANSO EXTRA: <span id="resumen-DE">0</span></li>
                             </ul>
                         </div>
                     </td>
@@ -393,6 +399,10 @@
                                 <input type="checkbox" class="form-check-input delete-checkbox-header" id="delete-checkbox-header-{{ i }}" data-proceso="{{ i }}" onchange="handleDeleteHeaderCheckboxChange(event)">
                                 <label for="delete-checkbox-header-{{ i }}">
                                     <img src="/static/icons/borrar.png" alt="Borrar Horas" style="width: 15px; height: 15px;">
+                                </label>
+                                <input type="checkbox" class="form-check-input comida-checkbox-header" id="comida-checkbox-header-{{ i }}" data-proceso="{{ i }}" onchange="handleComidaHeaderCheckboxChange(event)">
+                                <label for="comida-checkbox-header-{{ i }}">
+                                    <img src="/static/icons/hora_comida.png" alt="Hora de Comida" style="width: 15px; height: 15px;">
                                 </label>
                             </th>
                         {% endfor %}

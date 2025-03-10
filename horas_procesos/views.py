@@ -100,6 +100,7 @@ def gestion_horas_procesos(request):
 
     # Traducir el día de la semana a sin acentos
     dia_actual_sin_acento = dias_semana_sin_acentos[dia_actual_con_acento]
+    """ print(f"Día actual sin acento: {dia_actual_sin_acento}") """
 
     empleados_con_descripcion = []
     descanso_por_turno = {}
@@ -108,12 +109,18 @@ def gestion_horas_procesos(request):
         fecha_seleccionada = request.GET.get('fecha')
         departamento_seleccionado = request.GET.get('departamento')
 
-        print(f"Fecha seleccionada (AJAX): {fecha_seleccionada}")  # Agregar print de la fecha seleccionada
+        """ print(f"Fecha seleccionada (AJAX): {fecha_seleccionada}")  # Agregar print de la fecha seleccionada """
 
         if fecha_seleccionada:
             fecha_seleccionada = datetime.strptime(fecha_seleccionada, '%Y-%m-%d').date()
         else:
             fecha_seleccionada = timezone.now().date()
+
+        # Formatear y mostrar el día seleccionado en español usando babel
+        dia_seleccionado_con_acento = format_date(fecha_seleccionada, 'EEEE', locale='es_ES').lower()
+
+        # Traducir el día de la semana a sin acentos
+        dia_seleccionado_sin_acento = dias_semana_sin_acentos[dia_seleccionado_con_acento]
 
         registros_entrada = obtener_datos_tempus_accesos(fecha_seleccionada)
         empleados = Empleados.objects.filter(id_departamento=departamento_seleccionado)
@@ -138,7 +145,11 @@ def gestion_horas_procesos(request):
             cache.set('turnos', turnos, 3600)  # Cachear por 1 hora
 
         # Crear un diccionario para mapear el ID del turno a los días de descanso
-        descanso_por_turno = {turno[0]: [dia.strip().capitalize() for dia in turno[3].split('/')] if turno[3] else [] for turno in turnos}
+        descanso_por_turno = {
+            turno[0]: [dia.strip().capitalize() for dia in turno[3].split('/')] if len(turno) > 3 and turno[3] else []
+            for turno in turnos
+        }
+        """ print(f"Descanso por turno (AJAX): {descanso_por_turno}") """
 
         empleados_con_descripcion = [
             {
@@ -148,8 +159,8 @@ def gestion_horas_procesos(request):
                 'descripcion_departamento': departamentos_dict.get(emp.id_departamento, ''),
                 'id_turno': emp.id_turno,
                 'dias_descanso': descanso_por_turno.get(str(emp.id_turno), []),
-                'es_descanso': dia_actual_sin_acento in descanso_por_turno.get(str(emp.id_turno), []),
-                'tipo_inasistencia': 'ASI' if emp.codigo_emp in registros_entrada else 'D' if dia_actual_sin_acento in descanso_por_turno.get(str(emp.id_turno), []) else 'F'
+                'es_descanso': dia_seleccionado_sin_acento in descanso_por_turno.get(str(emp.id_turno), []),
+                'tipo_inasistencia': 'DE' if emp.codigo_emp in registros_entrada and dia_seleccionado_sin_acento in descanso_por_turno.get(str(emp.id_turno), []) else 'ASI' if emp.codigo_emp in registros_entrada else 'D' if dia_seleccionado_sin_acento in descanso_por_turno.get(str(emp.id_turno), []) else 'F'
             }
             for emp in empleados
         ]
@@ -166,18 +177,24 @@ def gestion_horas_procesos(request):
         return JsonResponse({
             'empleados': empleados_con_descripcion,
             'tipos_inasistencia': [{'ID_Asis': tipo[0], 'Descripcion': tipo[1]} for tipo in tipos_inasistencia],
-            'turnos': [{'id': turno[0], 'nombre': turno[1], 'horario': turno[2], 'descanso': turno[3]} for turno in turnos]
+            'turnos': [{'id': turno[0], 'nombre': turno[1], 'horario': turno[2] if len(turno) > 2 else '', 'descanso': turno[3] if len(turno) > 3 else ''} for turno in turnos]
         })
 
     if request.method == 'POST':
         # Obtener la fecha seleccionada del formulario
         fecha_seleccionada = request.POST.get('fecha')
-        print(f"Fecha seleccionada (POST): {fecha_seleccionada}")  # Agregar print de la fecha seleccionada
+        """ print(f"Fecha seleccionada (POST): {fecha_seleccionada}")  # Agregar print de la fecha seleccionada """
 
         if not fecha_seleccionada:
             fecha_seleccionada = timezone.now().date()  # Usar la fecha actual si no se selecciona ninguna
         else:
             fecha_seleccionada = datetime.strptime(fecha_seleccionada, '%Y-%m-%d').date()
+
+        # Formatear y mostrar el día seleccionado en español usando babel
+        dia_seleccionado_con_acento = format_date(fecha_seleccionada, 'EEEE', locale='es_ES').lower()
+
+        # Traducir el día de la semana a sin acentos
+        dia_seleccionado_sin_acento = dias_semana_sin_acentos[dia_seleccionado_con_acento]
 
         tipos_inasistencia = cache.get('tipos_inasistencia')
         if not tipos_inasistencia:
@@ -215,6 +232,7 @@ def gestion_horas_procesos(request):
         id_renuncia = descripcion_a_id.get('RENUNCIA')
         id_nuevo_ingreso = descripcion_a_id.get('NUEVO INGRESO')
         id_retardo = descripcion_a_id.get('RETARDO')
+        id_descanso_extra = descripcion_a_id.get('DESCANSO EXTRA')
 
         # Crear un diccionario para mapear los tipos de inasistencia a sus respectivos IDs y mensajes
         inasistencia_map = {
@@ -227,7 +245,8 @@ def gestion_horas_procesos(request):
             'B': (id_baja, 'BAJA'),
             'R': (id_renuncia, 'RENUNCIA'),
             'NI': (id_nuevo_ingreso, 'NUEVO INGRESO'),
-            'RT': (id_retardo, 'RETARDO')
+            'RT': (id_retardo, 'RETARDO'),
+            'DE': (id_descanso_extra, 'DESCANSO EXTRA')
         }
 
         # Obtener los datos de TempusAccesos
@@ -250,23 +269,30 @@ def gestion_horas_procesos(request):
         for empleado in empleados:
             codigo_emp = str(empleado.codigo_emp).strip()[-4:]  # Convertir a string y mantener solo los últimos 4 dígitos
 
-            es_descanso = dia_actual_sin_acento in descanso_por_turno.get(str(empleado.id_turno), [])
+            dias_descanso = descanso_por_turno.get(str(empleado.id_turno), [])
+            es_descanso = dia_seleccionado_sin_acento in dias_descanso
+            """ print(f"Empleado: {codigo_emp}, Turno: {empleado.id_turno}, Días de descanso: {dias_descanso}, Es descanso: {es_descanso}") """
 
             # Verificar si el empleado tiene una checada registrada
             tiene_checada = codigo_emp in registros_entrada
+            """ print(f"Empleado: {codigo_emp}, Tiene checada: {tiene_checada}") """
 
             # Determinar el tipo de inasistencia basado en las checadas y el día de descanso
-            if tiene_checada:
+            if tiene_checada and es_descanso:
+                tipo_inasistencia = 'DE'  # Marcar como DESCANSO EXTRA si tiene checada y es día de descanso
+            elif tiene_checada:
                 tipo_inasistencia = 'ASI'
             elif es_descanso:
                 tipo_inasistencia = 'D'
             else:
                 tipo_inasistencia = 'F'
+            """ print(f"Empleado: {codigo_emp}, Tipo de inasistencia inicial: {tipo_inasistencia}") """
 
             # Verificar si hay un tipo de inasistencia seleccionado en el formulario
             tipo_inasistencia_form = request.POST.get(f'tipo_inasistencia_{codigo_emp}')
             if tipo_inasistencia_form:
                 tipo_inasistencia = tipo_inasistencia_form
+            """ print(f"Empleado: {codigo_emp}, Tipo de inasistencia final: {tipo_inasistencia}") """
 
             # Asignar el ID_Asis y el mensaje correspondiente
             ID_Asis, mensaje = inasistencia_map.get(tipo_inasistencia, (id_falta, 'FALTA'))
@@ -278,7 +304,7 @@ def gestion_horas_procesos(request):
                 'id_departamento': empleado.id_departamento,
                 'descripcion_departamento': departamentos_dict.get(empleado.id_departamento, ''),
                 'id_turno': empleado.id_turno,
-                'dias_descanso': descanso_por_turno.get(str(empleado.id_turno), []),
+                'dias_descanso': dias_descanso,
                 'es_descanso': es_descanso,
                 'tipo_inasistencia': tipo_inasistencia
             })

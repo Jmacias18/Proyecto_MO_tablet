@@ -156,7 +156,8 @@
                 B: 0,
                 R: 0,
                 NI: 0,
-                ASI: 0
+                ASI: 0,
+                DE: 0
             };
         
             const empleados = new Set();
@@ -429,8 +430,8 @@ const validarHoras = (id) => {
 
     // Validar que si el tipo de inasistencia es NI, RT o ASI, haya un proceso seleccionado
     const procesoSelect = document.querySelector(`select[name="proceso_${id}"]`);
-    if (['NI', 'RT', 'ASI'].includes(selectInasistencia.value) && procesoSelect.value === '0') {
-        showAlert('Debe seleccionar un proceso si el tipo de inasistencia es NUEVO INGRESO, RETARDO o ASISTENCIA.', 'danger');
+    if (['NI', 'RT', 'ASI','DE'].includes(selectInasistencia.value) && procesoSelect.value === '0') {
+        showAlert('Debe seleccionar un proceso si el tipo de inasistencia es NUEVO INGRESO, RETARDO, DESCANSO EXTRA o ASISTENCIA.', 'danger');
         return false;
     }
 
@@ -543,7 +544,7 @@ const actualizarTotalHoras = () => {
             const id = input.name.split('_')[1];
             const row = document.querySelector(`tr[data-id="${id}"]`);
             if (!row) {
-                console.error(`Fila con data-id="${id}" no encontrada`);
+                console.error(`Fila con data-id="${id}"] no encontrada`);
                 return;
             }
             const codigoEmp = row.dataset.codigoEmp;
@@ -622,6 +623,10 @@ const actualizarTotalHoras = () => {
         // Actualizar el total de horas de todos los empleados
         const total = Object.values(totalHorasPorEmpleado).reduce((sum, value) => sum + value, 0);
         document.getElementById('total_proceso').textContent = total.toFixed(2);
+
+        // Calcular y actualizar el total dividido por 11.25
+        const totalDividido = total / 11.25;
+        document.getElementById('total_dividido').textContent = totalDividido.toFixed(2);
 
     } catch (error) {
         console.error("Error actualizando el total de horas:", error);
@@ -949,6 +954,7 @@ document.querySelectorAll('input[name^="horaentrada_"], input[name^="horasalida_
                                     <li>RENUNCIA: <span id="resumen-R">0</span></li>
                                     <li>NUEVO INGRESO: <span id="resumen-NI">0</span></li>
                                     <li>ASISTENCIA: <span id="resumen-ASI">0</span></li>
+                                    <li>DESCANSO EXTRA: <span id="resumen-DE">0</span></li>
                                 </ul>
                             </div>
                         </td>
@@ -1063,6 +1069,9 @@ document.querySelectorAll('input[name^="horaentrada_"], input[name^="horasalida_
                         <td colspan="12" class="text-end total-horas text-center">
                             <strong>Total Horas:</strong>
                             <span id="total_proceso" class="text-center">0.00</span>
+                            <br>
+                            <strong>M/O:</strong>
+                            <span id="total_dividido" class="text-center">0.00</span>
                         </td>
                     </tr>
                 </tfoot>

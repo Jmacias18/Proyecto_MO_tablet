@@ -50,6 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.value < 0) target.value = 0;
             calcularTotalHoras(codigoEmp, 0);
             calcularTotalHoras('codigoEmp1', 1);
+        }else if (target.classList.contains('comida-checkbox')) {
+            handleComidaCheckboxChange(event);
+            
+        
         }
     });
 
@@ -149,7 +153,7 @@ function toggleInputs(codigoEmp) {
 
     const tipoInasistencia = tipoInasistenciaElement.value;
     const inasistencia = ['F', 'D', 'V', 'INC', 'S', 'B','R'].includes(tipoInasistencia);
-    const desbloquear = ['RT', 'NI', 'ASI','P'].includes(tipoInasistencia);
+    const desbloquear = ['RT', 'NI', 'ASI','P','DE'].includes(tipoInasistencia);
 
     const inputs = document.querySelectorAll(`[name^="inicio_proceso"][name$="_${codigoEmp}"], [name^="fin_proceso"][name$="_${codigoEmp}"], [name="horas_extras_${codigoEmp}"]`);
     const totalElement = document.querySelector(`[name="total_${codigoEmp}"]`);
@@ -263,7 +267,7 @@ function toggleInputs(codigoEmp) {
             const tipoInasistenciaElement = document.querySelector(`select[name="tipo_inasistencia_${codigoEmp}"]`);
             const tipoInasistencia = tipoInasistenciaElement ? tipoInasistenciaElement.value : '';
     
-            if (['ASI', 'RT', 'NI','P'].includes(tipoInasistencia)) {
+            if (['ASI', 'RT', 'NI','P','DE'].includes(tipoInasistencia)) {
                 const totalField = document.querySelector(`input[name="total_${codigoEmp}"]`);
     
                 if (totalField) {
@@ -690,7 +694,7 @@ function filtrarEmpleadosPorFecha() {
                 const tipoInasistenciaSelect = row.querySelector(`select[name="tipo_inasistencia_${codigoEmp}"]`);
                 const tipoInasistencia = tipoInasistenciaSelect ? tipoInasistenciaSelect.value : null;
     
-                if (['ASI', 'RT', 'NI', 'P'].includes(tipoInasistencia)) {
+                if (['ASI', 'RT', 'NI', 'P','DE'].includes(tipoInasistencia)) {
                     const inicioInput = row.querySelector(`input[name="inicio_proceso${i}_${codigoEmp}"]`);
                     const finInput = row.querySelector(`input[name="fin_proceso${i}_${codigoEmp}"]`);
                     const deleteCheckbox = row.querySelector(`.delete-checkbox[data-proceso="${i}"][data-emp="${codigoEmp}"]`);
@@ -735,7 +739,7 @@ function filtrarEmpleadosPorFecha() {
                     // No hacer nada si el checkbox de borrar está marcado
                 } else if (tipoInasistencia === 'F' || tipoInasistencia === 'D') {
                     // No hacer nada si el tipo de inasistencia es 'F' o 'D'
-                } else if (['ASI', 'RT', 'NI', 'P'].includes(tipoInasistencia)) {
+                } else if (['ASI', 'RT', 'NI', 'P','DE'].includes(tipoInasistencia)) {
                     const inicioInput = row.querySelector(`input[name="inicio_proceso${i}_${codigoEmp}"]`);
                     const finInput = row.querySelector(`input[name="fin_proceso${i}_${codigoEmp}"]`);
     
@@ -777,7 +781,7 @@ function filtrarEmpleadosPorFecha() {
     
         const tipoInasistenciaSelect = row.querySelector(`select[name="tipo_inasistencia_${codigoEmp}"]`);
         const isDescanso = tipoInasistenciaSelect.value === 'D' || tipoInasistenciaSelect.value === 'F';
-        const desbloquear = ['RT', 'NI', 'ASI','P'].includes(tipoInasistenciaSelect.value);
+        const desbloquear = ['RT', 'NI', 'ASI','P','DE'].includes(tipoInasistenciaSelect.value);
     
         // Validar que los datos del dataset existen
         if (!procesoNum || !codigoEmp) {
@@ -840,7 +844,7 @@ function toggleProcesoInputs(procesoNum) {
         const tipoInasistenciaSelect = fila.querySelector(`select[name="tipo_inasistencia_${codigoEmp}"]`);
         const tipoInasistencia = tipoInasistenciaSelect ? tipoInasistenciaSelect.value : '';
 
-        if (deptoEmpleado === deptoSeleccionado && ['ASI', 'RT', 'NI','P'].includes(tipoInasistencia)) {
+        if (deptoEmpleado === deptoSeleccionado && ['ASI', 'RT', 'NI','P','DE'].includes(tipoInasistencia)) {
             const inicioInput = fila.querySelector(`[name="inicio_proceso${procesoNum}_${codigoEmp}"]`);
             const finInput = fila.querySelector(`[name="fin_proceso${procesoNum}_${codigoEmp}"]`);
             const copyCheckbox = fila.querySelector(`.copy-checkbox[data-proceso="${procesoNum}"]`);
@@ -1251,7 +1255,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function applyColorClass(selectElement) {
     const value = selectElement.value;
    
-    selectElement.classList.remove('falta', 'asistencia', 'permiso', 'descanso', 'retardo', 'vacaciones', 'suspension', 'baja', 'renuncia', 'nuevo_ingreso');
+    selectElement.classList.remove('falta', 'asistencia', 'permiso', 'descanso', 'retardo', 'vacaciones', 'suspension', 'baja', 'renuncia', 'nuevo_ingreso', 'incapacidad', 'descanso_extra');
     
     switch (value) {
         case 'F':
@@ -1298,6 +1302,10 @@ function applyColorClass(selectElement) {
             selectElement.classList.add('incapacidad');
             
             break;
+        case 'DE':
+            selectElement.classList.add('descanso_extra');
+
+            break
         default:
             
             break;
@@ -1342,4 +1350,40 @@ function handleDeleteHeaderCheckboxChange(event) {
     }
 
     requestAnimationFrame(processNextCheckbox);
+}
+function handleComidaHeaderCheckboxChange(event) {
+    console.log('handleComidaHeaderCheckboxChange called'); // Agregar este log para verificar
+    const checkbox = event.target;
+    const proceso = checkbox.getAttribute('data-proceso');
+    const checkboxes = document.querySelectorAll(`.comida-checkbox[data-proceso="${proceso}"]`);
+    let index = 0;
+
+    function processNextCheckbox() {
+        if (index >= checkboxes.length) {
+            return;
+        }
+
+        const cb = checkboxes[index];
+        const emp = cb.getAttribute('data-emp');
+        const tipoInasistenciaSelect = document.querySelector(`select[name="tipo_inasistencia_${emp}"]`);
+        const tipoInasistencia = tipoInasistenciaSelect ? tipoInasistenciaSelect.value : '';
+        const inicioInput = document.querySelector(`input[name="inicio_proceso${proceso}_${emp}"]`);
+        const finInput = document.querySelector(`input[name="fin_proceso${proceso}_${emp}"]`);
+
+        if (['RT', 'NI', 'ASI', 'P','DE'].includes(tipoInasistencia) && !inicioInput.disabled && !finInput.disabled && inicioInput.value && finInput.value) {
+            cb.checked = checkbox.checked;
+            // Crear un evento de cambio y dispararlo en el checkbox
+            const changeEvent = new Event('change');
+            cb.dispatchEvent(changeEvent);
+            console.log(`Checkbox de comida ${cb.checked ? 'marcado' : 'desmarcado'} para el proceso ${proceso} y el empleado ${emp}`);
+        } else {
+            cb.checked = false; // Desmarcar el checkbox si no cumple las condiciones
+        }
+
+        index++;
+        requestAnimationFrame(processNextCheckbox);
+    }
+
+    requestAnimationFrame(processNextCheckbox);
+    console.log('handleComidaHeaderCheckboxChange finished'); // Agregar este log para verificar
 }

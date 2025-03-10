@@ -910,6 +910,17 @@ function ajustarHoraFin(codigoEmp, procesoNum) {
 let totalHorasGlobal = 0;
 let totalHorasExtrasGlobal = 0;
 
+function cambiarColorCeldasEmpleado(codigoEmp, esCompleto) {
+    const celdasEmpleado = document.querySelectorAll(`tr[data-codigo_emp="${codigoEmp}"] td:nth-child(2), tr[data-codigo_emp="${codigoEmp}"] td:nth-child(19)`);
+    celdasEmpleado.forEach(celda => {
+        if (esCompleto) {
+            celda.classList.add('fila-completa');
+        } else {
+            celda.classList.remove('fila-completa');
+        }
+    });
+}
+
 function calcularTotalHoras(codigoEmp, procesoNum) {
     const inicio = document.querySelector(`[name="inicio_proceso${procesoNum}_${codigoEmp}"]`);
     const fin = document.querySelector(`[name="fin_proceso${procesoNum}_${codigoEmp}"]`);
@@ -975,7 +986,33 @@ function calcularTotalHoras(codigoEmp, procesoNum) {
     const horasExtras = parseFloat(horasExtrasField.value) || 0;
     totalHoras += horasExtras;
 
-    document.querySelector(`[name="total_${codigoEmp}"]`).value = totalHoras.toFixed(2);
+    const totalFieldEmpleado = document.querySelector(`[name="total_${codigoEmp}"]`);
+    totalFieldEmpleado.value = totalHoras.toFixed(2);
+
+    // Verificar si el total de horas cumple con las horas requeridas para el turno
+    let horasRequeridas = 0;
+    if (idTurno === "100") {
+        if (['lunes', 'martes', 'miércoles', 'jueves'].includes(diaActual)) {
+            horasRequeridas = 11.25;
+        } else if (['viernes', 'sábado'].includes(diaActual)) {
+            horasRequeridas = 7.50;
+        }
+    } else if (["4", "1009", "10"].includes(idTurno)) {
+        horasRequeridas = 8.25;
+    } else if (["1035", "1033", "1031", "1041", "1034", "1032"].includes(idTurno)) {
+        if (diaActual === 'lunes') {
+            horasRequeridas = 11.25;
+        } else {
+            horasRequeridas = 10.40;
+        }
+    } else if (idTurno === "1044") {
+        horasRequeridas = 10.25;
+    } else {
+        horasRequeridas = 11.25;
+    }
+
+    const esCompleto = totalHoras >= horasRequeridas && totalHoras <= horasRequeridas;
+    cambiarColorCeldasEmpleado(codigoEmp, esCompleto);
 
     // Llamar a sumarHorasPorProceso para actualizar los totales
     sumarHorasPorProceso();
@@ -1158,7 +1195,7 @@ function restorePreviousState() {
         });
 
         // Recalcular los totales después de restaurar el estado
-        console.log('Recalculando totales...');
+        /* console.log('Recalculando totales...'); */
         recalcularTotales();
     } else {
         console.log('No hay estados anteriores para restaurar.');
@@ -1177,7 +1214,7 @@ function recalcularTotales() {
             if (totalProceso && totalProceso.value && !totalProceso.disabled) {
                 const totalProcesoValue = parseFloat(totalProceso.value) || 0;
                 totalHorasPorProceso[i - 1] += totalProcesoValue;
-                console.log(`Sumando ${totalProcesoValue} horas al proceso ${i} para el empleado ${codigoEmp}`);
+                /* console.log(`Sumando ${totalProcesoValue} horas al proceso ${i} para el empleado ${codigoEmp}`); */
             }
         }
     });
@@ -1313,7 +1350,7 @@ function applyColorClass(selectElement) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Documento cargado, aplicando colores a los selectores de tipo de inasistencia'); // Log para verificar que el DOM está cargado
+    /* console.log('Documento cargado, aplicando colores a los selectores de tipo de inasistencia'); // Log para verificar que el DOM está cargado */
     document.querySelectorAll('select[name^="tipo_inasistencia_"]').forEach(select => {
         applyColorClass(select);
         select.addEventListener('change', function() {
@@ -1352,7 +1389,7 @@ function handleDeleteHeaderCheckboxChange(event) {
     requestAnimationFrame(processNextCheckbox);
 }
 function handleComidaHeaderCheckboxChange(event) {
-    console.log('handleComidaHeaderCheckboxChange called'); // Agregar este log para verificar
+    /* console.log('handleComidaHeaderCheckboxChange called'); // Agregar este log para verificar */
     const checkbox = event.target;
     const proceso = checkbox.getAttribute('data-proceso');
     const checkboxes = document.querySelectorAll(`.comida-checkbox[data-proceso="${proceso}"]`);
@@ -1370,12 +1407,12 @@ function handleComidaHeaderCheckboxChange(event) {
         const inicioInput = document.querySelector(`input[name="inicio_proceso${proceso}_${emp}"]`);
         const finInput = document.querySelector(`input[name="fin_proceso${proceso}_${emp}"]`);
 
-        if (['RT', 'NI', 'ASI', 'P','DE'].includes(tipoInasistencia) && !inicioInput.disabled && !finInput.disabled && inicioInput.value && finInput.value) {
+        if (!cb.disabled && ['RT', 'NI', 'ASI', 'P', 'DE'].includes(tipoInasistencia) && !inicioInput.disabled && !finInput.disabled && inicioInput.value && finInput.value) {
             cb.checked = checkbox.checked;
             // Crear un evento de cambio y dispararlo en el checkbox
             const changeEvent = new Event('change');
             cb.dispatchEvent(changeEvent);
-            console.log(`Checkbox de comida ${cb.checked ? 'marcado' : 'desmarcado'} para el proceso ${proceso} y el empleado ${emp}`);
+            /* console.log(`Checkbox de comida ${cb.checked ? 'marcado' : 'desmarcado'} para el proceso ${proceso} y el empleado ${emp}`); */
         } else {
             cb.checked = false; // Desmarcar el checkbox si no cumple las condiciones
         }
@@ -1385,5 +1422,5 @@ function handleComidaHeaderCheckboxChange(event) {
     }
 
     requestAnimationFrame(processNextCheckbox);
-    console.log('handleComidaHeaderCheckboxChange finished'); // Agregar este log para verificar
+    /* console.log('handleComidaHeaderCheckboxChange finished'); // Agregar este log para verificar */
 }

@@ -87,6 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
             copyAllCheckbox.style.display = 'none';
             copyAllLabel.style.display = 'none';
         }
+        document.querySelectorAll('.delete-checkbox-header, .comida-checkbox-header, .copy-hours-checkbox-header').forEach(checkbox => {
+            checkbox.checked = false;
+        });
     });
 
     // Agregar evento change a todos los selectores de inasistencia
@@ -246,109 +249,88 @@ function toggleInputs(codigoEmp) {
         form.submit(); // Enviar el formulario sin validaciones
     }
 
-    function validartotalhoras() {
-        const filasEmpleados = Array.from(document.querySelectorAll('#empleados_tbody tr')).filter(fila => fila.style.display !== 'none');
-        let valid = true;
-        let mensajesAlerta = [];
-        const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-        
-        // Obtener la fecha seleccionada en el input de tipo date
-        const fechaInput = document.getElementById('fecha').value;
-        const fechaSeleccionada = new Date(fechaInput + 'T00:00:00'); // Asegurarse de que se tome la fecha correctamente
-        const diaActual = diasSemana[fechaSeleccionada.getUTCDay()];
-        
-        /* // Agregar console.log para verificar cómo se toma el día
-        console.log(`Fecha seleccionada: ${fechaSeleccionada}`);
-        console.log(`Día de la semana: ${diaActual}`); */
+   function validartotalhoras() {
+    const filasEmpleados = Array.from(document.querySelectorAll('#empleados_tbody tr')).filter(fila => fila.style.display !== 'none');
+    let valid = true;
+    let mensajesAlerta = [];
+    const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
     
-        filasEmpleados.forEach(fila => {
-            const codigoEmp = fila.dataset.codigo_emp;
-            const idTurno = fila.dataset.id_turno; // Obtener el id_turno del dataset
-            const tipoInasistenciaElement = document.querySelector(`select[name="tipo_inasistencia_${codigoEmp}"]`);
-            const tipoInasistencia = tipoInasistenciaElement ? tipoInasistenciaElement.value : '';
-    
-            if (['ASI', 'RT', 'NI','P','DE'].includes(tipoInasistencia)) {
-                const totalField = document.querySelector(`input[name="total_${codigoEmp}"]`);
-    
-                if (totalField) {
-                    const totalHoras = parseFloat(totalField.value) || 0;
-    
-                    // Validación para empleados con id_turno="100"
-                    if (idTurno === "100") {
+    // Obtener la fecha seleccionada en el input de tipo date
+    const fechaInput = document.getElementById('fecha').value;
+    const fechaSeleccionada = new Date(fechaInput + 'T00:00:00'); // Asegurarse de que se tome la fecha correctamente
+    const diaActual = diasSemana[fechaSeleccionada.getUTCDay()];
+
+    filasEmpleados.forEach(fila => {
+        const codigoEmp = fila.dataset.codigo_emp;
+        const idTurno = fila.dataset.id_turno; // Obtener el id_turno del dataset
+        const tipoInasistenciaElement = document.querySelector(`select[name="tipo_inasistencia_${codigoEmp}"]`);
+        const tipoInasistencia = tipoInasistenciaElement ? tipoInasistenciaElement.value : '';
+
+        if (['ASI', 'RT', 'NI', 'P', 'DE'].includes(tipoInasistencia)) {
+            const totalField = document.querySelector(`input[name="total_${codigoEmp}"]`);
+
+            if (totalField) {
+                const totalHoras = parseFloat(totalField.value) || 0;
+
+                let horasRequeridas = 0;
+                switch (idTurno) {
+                    case "100":
+                    case "16":
                         if (['lunes', 'martes', 'miércoles', 'jueves'].includes(diaActual)) {
-                            if (totalHoras < 11.25) {
-                                mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene menos de 11.25 horas trabajadas.`);
-                                valid = false;
-                            } else if (totalHoras > 11.25) {
-                                mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene más de 11.25 horas trabajadas.`);
-                                valid = false;
-                            }
+                            horasRequeridas = 9.25;
                         } else if (['viernes', 'sábado'].includes(diaActual)) {
-                            if (totalHoras < 7.50) {
-                                mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene menos de 7.50 horas trabajadas.`);
-                                valid = false;
-                            } else if (totalHoras > 7.50) {
-                                mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene más de 7.50 horas trabajadas.`);
-                                valid = false;
-                            }
+                            horasRequeridas = 7.50;
                         }
-                    } else if (["4", "1009", "10"].includes(idTurno)) {
-                        // Validación para empleados con id_turno="4", "1009", "10"
-                        if (totalHoras < 8.25) {
-                            mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene menos de 8.25 horas trabajadas.`);
-                            valid = false;
-                        } else if (totalHoras > 8.25) {
-                            mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene más de 8.25 horas trabajadas.`);
-                            valid = false;
-                        }
-                    } else if (["1035", "1033", "1031", "1041", "1034", "1032"].includes(idTurno)) {
-                        // Validación para empleados con id_turno="1035", "1033", "1031", "1041", "1034", "1032"
+                        break;
+                    case "2":
+                        horasRequeridas = 9.25;
+                        break;
+                    case "4":
+                    case "1009":
+                    case "10":
+                    case "26":
+                    case "7":
+                        horasRequeridas = 8.25;
+                        break;
+                    case "1035":
+                    case "1033":
+                    case "1031":
+                    case "1041":
+                    case "1034":
+                    case "1032":
                         if (diaActual === 'lunes') {
-                            if (totalHoras < 11.25) {
-                                mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene menos de 11.25 horas trabajadas.`);
-                                valid = false;
-                            } else if (totalHoras > 11.25) {
-                                mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene más de 11.25 horas trabajadas.`);
-                                valid = false;
-                            }
+                            horasRequeridas = 11.25;
                         } else {
-                            if (totalHoras < 10.40) {
-                                mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene menos de 10.40 horas trabajadas.`);
-                                valid = false;
-                            } else if (totalHoras > 10.40) {
-                                mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene más de 10.40 horas trabajadas.`);
-                                valid = false;
-                            }
+                            horasRequeridas = 10.25;
                         }
-                    } else if (idTurno === "1044") {
-                        // Validación para empleados con id_turno="1044"
-                        if (totalHoras < 10.25) {
-                            mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene menos de 10.25 horas trabajadas.`);
-                            valid = false;
-                        } else if (totalHoras > 10.25) {
-                            mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene más de 10.25 horas trabajadas.`);
-                            valid = false;
-                        }
-                    } else {
-                        // Validación para otros empleados
-                        if (totalHoras < 11.25) {
-                            mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene menos de 11.25 horas trabajadas.`);
-                            valid = false;
-                        } else if (totalHoras > 11.25) {
-                            mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene más de 11.25 horas trabajadas.`);
-                            valid = false;
-                        }
-                    }
+                        break;
+                    case "1044":
+                    case "1048":
+                    case "1041":
+                        horasRequeridas = 10.25;
+                        break;
+                    default:
+                        horasRequeridas = 11.25;
+                        break;
+                }
+
+                if (totalHoras < horasRequeridas) {
+                    mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene menos de ${horasRequeridas} horas trabajadas.`);
+                    valid = false;
+                } else if (totalHoras > horasRequeridas) {
+                    mensajesAlerta.push(`El empleado con código ${codigoEmp} tiene más de ${horasRequeridas} horas trabajadas.`);
+                    valid = false;
                 }
             }
-        });
-    
-        if (!valid) {
-            showAlert(mensajesAlerta.join('\n'), 'danger');
         }
-    
-        return valid;
+    });
+
+    if (!valid) {
+        showAlert(mensajesAlerta.join('\n'), 'danger');
     }
+
+    return valid;
+}
 let totalProcesosContainer;
 
 
@@ -447,7 +429,7 @@ function filtrarEmpleados() {
                         </td>
                         <td>
                             ${turno ? `
-                                <div>Turno: ${turno.nombre}</div>
+                                <div>Turno: ${turno.turno}</div>
                                 <div>Horario: ${turno.horario}</div>
                                 <div>Descanso: ${turno.descanso}</div>
                             ` : 'No asignado'}
@@ -552,7 +534,7 @@ function filtrarEmpleadosPorFecha() {
                         </td>
                         <td>
                             ${turno ? `
-                                <div>Turno: ${turno.nombre}</div>
+                                <div>Turno: ${turno.turno}</div>
                                 <div>Horario: ${turno.horario}</div>
                                 <div>Descanso: ${turno.descanso}</div>
                             ` : 'No asignado'}
@@ -981,37 +963,57 @@ function calcularTotalHoras(codigoEmp, procesoNum) {
         }
     });
 
-    // Agregar horas extras
-    const horasExtrasField = document.querySelector(`[name="horas_extras_${codigoEmp}"]`);
-    const horasExtras = parseFloat(horasExtrasField.value) || 0;
-    totalHoras += horasExtras;
-
     const totalFieldEmpleado = document.querySelector(`[name="total_${codigoEmp}"]`);
     totalFieldEmpleado.value = totalHoras.toFixed(2);
 
     // Verificar si el total de horas cumple con las horas requeridas para el turno
     let horasRequeridas = 0;
-    if (idTurno === "100") {
-        if (['lunes', 'martes', 'miércoles', 'jueves'].includes(diaActual)) {
+    switch (idTurno) {
+        case "100":
+        case "16":
+            if (['lunes', 'martes', 'miércoles', 'jueves'].includes(diaActual)) {
+                horasRequeridas = 9.25;
+            } else if (['viernes', 'sábado'].includes(diaActual)) {
+                horasRequeridas = 7.50;
+            }
+            break;
+        case "2":
+            horasRequeridas = 9.25;
+            break;
+        case "4":
+        case "1009":
+        case "10":
+        case "26":
+        case "7":
+            horasRequeridas = 8.25;
+            break;
+        case "1035":
+        case "1033":
+        case "1031":
+        case "1041":
+        case "1034":
+        case "1032":
+            if (diaActual === 'lunes') {
+                horasRequeridas = 11.25;
+            } else {
+                horasRequeridas = 10.25;
+            }
+            break;
+        case "1044":
+        case "1048":
+        case "1041":
+            horasRequeridas = 10.25;
+            break;
+        default:
             horasRequeridas = 11.25;
-        } else if (['viernes', 'sábado'].includes(diaActual)) {
-            horasRequeridas = 7.50;
-        }
-    } else if (["4", "1009", "10"].includes(idTurno)) {
-        horasRequeridas = 8.25;
-    } else if (["1035", "1033", "1031", "1041", "1034", "1032"].includes(idTurno)) {
-        if (diaActual === 'lunes') {
-            horasRequeridas = 11.25;
-        } else {
-            horasRequeridas = 10.40;
-        }
-    } else if (idTurno === "1044") {
-        horasRequeridas = 10.25;
-    } else {
-        horasRequeridas = 11.25;
+            break;
     }
 
+    /* console.log(`Horas requeridas para el turno ${idTurno}: ${horasRequeridas}`);
+    console.log(`Total horas trabajadas: ${totalHoras}`); */
+
     const esCompleto = totalHoras >= horasRequeridas && totalHoras <= horasRequeridas;
+    /* console.log(`Es completo: ${esCompleto}`); */
     cambiarColorCeldasEmpleado(codigoEmp, esCompleto);
 
     // Llamar a sumarHorasPorProceso para actualizar los totales
@@ -1354,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('select[name^="tipo_inasistencia_"]').forEach(select => {
         applyColorClass(select);
         select.addEventListener('change', function() {
-            console.log(`Cambio detectado en el selector: ${select.name}`); // Log para verificar el cambio en el selector
+            /* console.log(`Cambio detectado en el selector: ${select.name}`); // Log para verificar el cambio en el selector */
             applyColorClass(select);
         });
     });
@@ -1423,4 +1425,96 @@ function handleComidaHeaderCheckboxChange(event) {
 
     requestAnimationFrame(processNextCheckbox);
     /* console.log('handleComidaHeaderCheckboxChange finished'); // Agregar este log para verificar */
+}
+function handleCopyHoursHeaderCheckboxChange(event) {
+    const checkbox = event.target;
+    const proceso = checkbox.getAttribute('data-proceso');
+    const deptoActual = document.getElementById('depto_select').value; // Obtener el departamento seleccionado
+    if (!deptoActual) {
+        console.error('No se pudo encontrar el departamento seleccionado.');
+        return;
+    }
+
+    const rows = document.querySelectorAll(`tr[data-depto="${deptoActual}"]`);
+    let inicioValue = null;
+    let finValue = null;
+    let foundValidRow = false;
+
+    // Buscar la primera fila con horas válidas para el proceso específico
+    for (let row of rows) {
+        const codigoEmp = row.dataset.codigo_emp;
+        const tipoInasistenciaSelect = row.querySelector(`select[name="tipo_inasistencia_${codigoEmp}"]`);
+        const tipoInasistencia = tipoInasistenciaSelect ? tipoInasistenciaSelect.value : null;
+
+        if (['ASI', 'RT', 'NI', 'P', 'DE'].includes(tipoInasistencia)) {
+            const inicioInput = row.querySelector(`input[name="inicio_proceso${proceso}_${codigoEmp}"]`);
+            const finInput = row.querySelector(`input[name="fin_proceso${proceso}_${codigoEmp}"]`);
+            const deleteCheckbox = row.querySelector(`.delete-checkbox[data-proceso="${proceso}"][data-emp="${codigoEmp}"]`);
+
+            if (inicioInput.value && finInput.value && (!deleteCheckbox || !deleteCheckbox.checked)) {
+                inicioValue = inicioInput.value;
+                finValue = finInput.value;
+                foundValidRow = true;
+                /* console.log(`Fila válida encontrada: Empleado ${codigoEmp}, Proceso ${proceso}, Inicio ${inicioValue}, Fin ${finValue}`); */
+                break;
+            }
+        }
+    }
+
+    if (!foundValidRow) {
+        console.error(`No se encontraron filas con horas válidas para copiar en el proceso ${proceso}.`);
+        return;
+    }
+
+    let index = 0;
+
+    function processNextRow() {
+        if (index >= rows.length) {
+            return;
+        }
+
+        const row = rows[index];
+        const codigoEmp = row.dataset.codigo_emp;
+        const tipoInasistenciaSelect = row.querySelector(`select[name="tipo_inasistencia_${codigoEmp}"]`);
+        const tipoInasistencia = tipoInasistenciaSelect ? tipoInasistenciaSelect.value : null;
+
+        // Verificar si el checkbox delete-checkbox está marcado
+        const deleteCheckbox = row.querySelector(`.delete-checkbox[data-proceso="${proceso}"][data-emp="${codigoEmp}"]`);
+        if (deleteCheckbox && deleteCheckbox.checked) {
+            /* console.log(`Checkbox de borrar marcado para empleado ${codigoEmp}, proceso ${proceso}`); */
+            // No hacer nada si el checkbox de borrar está marcado
+        } else if (tipoInasistencia === 'F' || tipoInasistencia === 'D') {
+            console.log(`Tipo de inasistencia es 'F' o 'D' para empleado ${codigoEmp}, proceso ${proceso}`);
+            // No hacer nada si el tipo de inasistencia es 'F' o 'D'
+        } else if (['ASI', 'RT', 'NI', 'P', 'DE'].includes(tipoInasistencia)) {
+            const inicioInput = row.querySelector(`input[name="inicio_proceso${proceso}_${codigoEmp}"]`);
+            const finInput = row.querySelector(`input[name="fin_proceso${proceso}_${codigoEmp}"]`);
+
+            if (inicioInput && finInput && (!deleteCheckbox || !deleteCheckbox.checked)) {
+                // Habilitar los inputs antes de copiar los valores
+                inicioInput.disabled = false;
+                finInput.disabled = false;
+
+                // Copiar los valores de inicio y fin solo si están vacíos
+                if (!inicioInput.value && !finInput.value) {
+                    if (inicioValue && finValue) {
+                        inicioInput.value = inicioValue;
+                        finInput.value = finValue;
+                        /* console.log(`Copiando valores: Empleado ${codigoEmp}, Proceso ${proceso}, Inicio ${inicioValue}, Fin ${finValue}`); */
+
+                        // Llamar a las funciones de ajuste y cálculo si es necesario
+                        ajustarHoraFin(codigoEmp, proceso);
+                        calcularTotalHoras(codigoEmp, proceso);
+                    } else {
+                        console.log(`No se copian valores vacíos para el proceso ${proceso} del empleado ${codigoEmp}`);
+                    }
+                }
+            }
+        }
+
+        index++;
+        requestAnimationFrame(processNextRow);
+    }
+
+    requestAnimationFrame(processNextRow);
 }

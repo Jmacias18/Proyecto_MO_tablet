@@ -135,14 +135,11 @@ def gestion_horas_procesos(request):
         # Convertir departamentos a un diccionario
         departamentos_dict = {depto[0]: depto[1] for depto in departamentos}
 
-        turnos = cache.get('turnos')
-        if not turnos:
-            spf_info_conn = get_spf_info_connection()
-            cursor = spf_info_conn.cursor()
-            cursor.execute("SELECT ID_Turno, Nombre, Horario, Descanso FROM Turnos")
-            turnos = cursor.fetchall()
-            spf_info_conn.close()
-            cache.set('turnos', turnos, 3600)  # Cachear por 1 hora
+        spf_info_conn = get_spf_info_connection()
+        cursor = spf_info_conn.cursor()
+        cursor.execute("SELECT ID_Turno, Turno, Horario, Descanso FROM Turnos")
+        turnos = cursor.fetchall()
+        spf_info_conn.close()
 
         # Crear un diccionario para mapear el ID del turno a los días de descanso
         descanso_por_turno = {
@@ -164,6 +161,7 @@ def gestion_horas_procesos(request):
             }
             for emp in empleados
         ]
+        """ print(f"Empleados con descripción (AJAX): {empleados_con_descripcion}") """
 
         tipos_inasistencia = cache.get('tipos_inasistencia')
         if not tipos_inasistencia:
@@ -177,7 +175,7 @@ def gestion_horas_procesos(request):
         return JsonResponse({
             'empleados': empleados_con_descripcion,
             'tipos_inasistencia': [{'ID_Asis': tipo[0], 'Descripcion': tipo[1]} for tipo in tipos_inasistencia],
-            'turnos': [{'id': turno[0], 'nombre': turno[1], 'horario': turno[2] if len(turno) > 2 else '', 'descanso': turno[3] if len(turno) > 3 else ''} for turno in turnos]
+            'turnos': [{'id': turno[0], 'turno': turno[1], 'horario': turno[2] if len(turno) > 2 else '', 'descanso': turno[3] if len(turno) > 3 else ''} for turno in turnos]
         })
 
     if request.method == 'POST':
@@ -208,14 +206,11 @@ def gestion_horas_procesos(request):
         # Crear un diccionario para mapear la descripción al ID_Asis
         descripcion_a_id = {tipo[1]: tipo[0] for tipo in tipos_inasistencia}
 
-        turnos = cache.get('turnos')
-        if not turnos:
-            spf_info_conn = get_spf_info_connection()
-            cursor = spf_info_conn.cursor()
-            cursor.execute("SELECT ID_Turno, Descanso FROM Turnos")
-            turnos = cursor.fetchall()
-            spf_info_conn.close()
-            cache.set('turnos', turnos, 3600)  # Cachear por 1 hora
+        spf_info_conn = get_spf_info_connection()
+        cursor = spf_info_conn.cursor()
+        cursor.execute("SELECT ID_Turno, Turno, Horario, Descanso FROM Turnos")
+        turnos = cursor.fetchall()
+        spf_info_conn.close()
 
         # Crear un diccionario para mapear el ID del turno a los días de descanso
         descanso_por_turno = {turno[0]: [dia.strip().capitalize() for dia in turno[1].split('/')] if turno[1] else [] for turno in turnos}
@@ -428,14 +423,11 @@ def gestion_horas_procesos(request):
         spf_info_conn.close()
         cache.set('tipos_inasistencia', tipos_inasistencia, 3600)  # Cachear por 1 hora
 
-    turnos = cache.get('turnos')
-    if not turnos:
-        spf_info_conn = get_spf_info_connection()
-        cursor = spf_info_conn.cursor()
-        cursor.execute("SELECT ID_Turno, Turno, Horario, Descanso FROM Turnos")
-        turnos = cursor.fetchall()
-        spf_info_conn.close()
-        cache.set('turnos', turnos, 3600)  # Cachear por 1 hora
+    spf_info_conn = get_spf_info_connection()
+    cursor = spf_info_conn.cursor()
+    cursor.execute("SELECT ID_Turno, Turno, Horario, Descanso FROM Turnos")
+    turnos = cursor.fetchall()
+    spf_info_conn.close()
 
     # Crear un diccionario para mapear el ID del turno a los días de descanso
     descanso_por_turno = {}
@@ -448,7 +440,6 @@ def gestion_horas_procesos(request):
             # Si no tiene al menos 4 elementos o el cuarto elemento no es una cadena, asignar una lista vacía
             descanso_por_turno[turno[0]] = []
 
-    """ print(f"Descanso por turno: {descanso_por_turno}") """
     # Obtener los datos de TempusAccesos
     registros_entrada = obtener_datos_tempus_accesos(fecha_actual.date())
 
@@ -463,7 +454,7 @@ def gestion_horas_procesos(request):
     'rango_procesos': rango_procesos,  # Pasar el rango al contexto
     'productos': productos,
     'tipos_inasistencia': tipos_inasistencia,  # Pasar los tipos de inasistencia al contexto
-    'turnos': [{'id': turno[0], 'nombre': turno[1], 'horario': turno[2] if len(turno) > 2 else '', 'descanso': turno[3] if len(turno) > 3 else ''} for turno in turnos],  # Pasar los turnos al contexto
+    'turnos': [{'id': turno[0], 'turno': turno[1], 'horario': turno[2] if len(turno) > 2 else '', 'descanso': turno[3] if len(turno) > 3 else ''} for turno in turnos],  # Pasar los turnos al contexto
     'departamentos_a_mostrar': [12, 16, 17, 18, 19, 20, 21, 22, 23],  # Pasar la lista de IDs de departamentos a mostrar al contexto
     'empleados_motivo': list(Motivo.objects.values_list('codigo_emp', flat=True))  # Pasar la lista de empleados de la tabla Motivo al contexto
 })
@@ -571,7 +562,7 @@ def empleados_por_departamento(request):
         spf_info_conn.close()
         cache.set('turnos', turnos, 3600)  # Cachear por 1 hora
 
-    turnos_dict = {turno[0]: {'nombre': turno[1], 'horario': turno[2], 'descanso': turno[3]} for turno in turnos}
+    turnos_dict = {turno[0]: {'turno': turno[1], 'horario': turno[2], 'descanso': turno[3]} for turno in turnos}
 
     # Diccionario de traducción de días de la semana de español con acentos a sin acentos
     dias_semana_sin_acentos = {
@@ -596,7 +587,7 @@ def empleados_por_departamento(request):
             'tipo_asistencia': 'ASISTENCIA' if str(emp.codigo_emp).strip()[-4:] in registros_entrada else 'DESCANSO' if dia_actual_sin_acento in turnos_dict.get(emp.id_turno, {}).get('descanso', '').split('/') else 'FALTA',
             'hora_entrada': registros_entrada.get(str(emp.codigo_emp).strip()[-4:], '').strftime('%I:%M %p') if str(emp.codigo_emp).strip()[-4:] in registros_entrada else '',
             'hora_salida': registros_salida.get(str(emp.codigo_emp).strip()[-4:], '').strftime('%I:%M %p') if str(emp.codigo_emp).strip()[-4:] in registros_salida else '',
-            'turno': turnos_dict.get(emp.id_turno, {}).get('nombre', ''),
+            'turno': turnos_dict.get(emp.id_turno, {}).get('turno', ''),
             'horario': turnos_dict.get(emp.id_turno, {}).get('horario', ''),
             'descanso': turnos_dict.get(emp.id_turno, {}).get('descanso', '')
         }
@@ -895,7 +886,7 @@ def actualizar_horas_procesos(request):
         'fecha_seleccionada': fecha_seleccionada,
         'productos': productos,
         'tipos_inasistencia': tipos_inasistencia,
-        'turnos': [{'id': turno[0], 'nombre': turno[1], 'horario': turno[2] if len(turno) > 2 else '', 'descanso': turno[3] if len(turno) > 3 else ''} for turno in turnos]  # Pasar los turnos al contexto
+        'turnos': [{'id': turno[0], 'turno': turno[1], 'horario': turno[2] if len(turno) > 2 else '', 'descanso': turno[3] if len(turno) > 3 else ''} for turno in turnos]  # Pasar los turnos al contexto
     })
 @csrf_exempt
 def eliminar_proceso(request):

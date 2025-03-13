@@ -402,11 +402,15 @@
                                 </select>
                                 <input type="checkbox" class="form-check-input delete-checkbox-header" id="delete-checkbox-header-{{ i }}" data-proceso="{{ i }}" onchange="handleDeleteHeaderCheckboxChange(event)">
                                 <label for="delete-checkbox-header-{{ i }}">
-                                    <img src="/static/icons/borrar.png" alt="Borrar Horas" style="width: 15px; height: 15px;">
+                                    <img src="/static/icons/borrar.png" alt="Borrar Horas" style="width: 13px; height: 13px;">
                                 </label>
                                 <input type="checkbox" class="form-check-input comida-checkbox-header" id="comida-checkbox-header-{{ i }}" data-proceso="{{ i }}" onchange="handleComidaHeaderCheckboxChange(event)">
                                 <label for="comida-checkbox-header-{{ i }}">
-                                    <img src="/static/icons/hora_comida.png" alt="Hora de Comida" style="width: 15px; height: 15px;">
+                                    <img src="/static/icons/hora_comida.png" alt="Hora de Comida" style="width: 13px; height: 13px;">
+                                </label>
+                                <input type="checkbox" class="form-check-input copy-hours-checkbox-header" id="copy-hours-checkbox-header-{{ i }}" data-proceso="{{ i }}" onchange="handleCopyHoursHeaderCheckboxChange(event)">
+                                <label for="copy-hours-checkbox-header-{{ i }}">
+                                    <img src="/static/icons/copiar.png" alt="Copiar Horas" style="width: 13px; height: 13px;">
                                 </label>
                             </th>
                         {% endfor %}
@@ -438,7 +442,7 @@
                         <td>
                             {% for turno in turnos %}
                                 {% if turno.id == empleado.id_turno %}
-                                    <div>Turno: {{ turno.nombre }}</div>
+                                    <div>Turno: {{ turno.turno }}</div>
                                     <div>Horario: {{ turno.horario }}</div>
                                     <div>Descanso: {{ turno.descanso }}</div>
                                 {% endif %}

@@ -50,7 +50,7 @@ def sync_table(local_conn, remote_conn, table_name):
         """
 
         # Activar IDENTITY_INSERT para la tabla si es necesario
-        if table_name == 'Procesos':
+        if table_name in ['HorasProcesos', 'Procesos']:
             remote_cur.execute(f"SET IDENTITY_INSERT {table_name} ON")
 
         # Insertar o actualizar los datos en la tabla remota
@@ -59,7 +59,7 @@ def sync_table(local_conn, remote_conn, table_name):
             remote_cur.execute(insert_query, row_data + row_data)  # Duplicar los parámetros para la cláusula INSERT
 
         # Desactivar IDENTITY_INSERT para la tabla si es necesario
-        if table_name == 'Procesos':
+        if table_name in ['HorasProcesos', 'Procesos']:
             remote_cur.execute(f"SET IDENTITY_INSERT {table_name} OFF")
 
         # Confirmar los cambios en la base de datos remota

@@ -9,6 +9,7 @@ class ParosProduccionForm(forms.ModelForm):
             'ID_Cliente',
             'OrdenFabricacionSAP',
             'ID_Producto',
+            'FechaParo',  # Añadir el campo FechaParo
             'HoraInicio',
             'HoraFin',
             'TiempoMuerto',
@@ -20,6 +21,7 @@ class ParosProduccionForm(forms.ModelForm):
             'Causa',
         ]
         widgets = {
+            'FechaParo': forms.DateInput(attrs={'type': 'date'}),
             'HoraInicio': TimeInput(attrs={'type': 'time'}),
             'HoraFin': TimeInput(attrs={'type': 'time'}),
         }

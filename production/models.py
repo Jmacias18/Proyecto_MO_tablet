@@ -97,7 +97,7 @@ class Productos(models.Model):
 
 class ParosProduccion(models.Model):
     ID_Paro = models.AutoField(primary_key=True)
-    FechaParo = models.DateField(auto_now_add=True)
+    FechaParo = models.DateField()
     ID_Cliente = models.ForeignKey(Clientes, on_delete=models.CASCADE, db_column='ID_Cliente')
     OrdenFabricacionSAP = models.PositiveIntegerField()
     ID_Producto = models.CharField(max_length=50, db_column='ID_Producto')

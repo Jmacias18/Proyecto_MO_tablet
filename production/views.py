@@ -579,6 +579,7 @@ def sync_data_view(request):
                         mo = registro.MO if registro.MO is not None else 0
                         id_proceso = registro.ID_Proceso_id if registro.ID_Proceso is not None else None
                         id_maquinaria = registro.ID_Maquinaria_id if registro.ID_Maquinaria is not None else None
+                        id_concepto = registro.ID_Concepto_id if registro.ID_Concepto is not None else None
                         causa = registro.Causa if registro.Causa is not None else ''
                         diagnostico = registro.Diagnostico if registro.Diagnostico is not None else ''
                         causaraiz = registro.CausaRaiz if registro.CausaRaiz is not None else ''
@@ -592,14 +593,14 @@ def sync_data_view(request):
                                               SET ID_Cliente = ?, OrdenFabricacionSAP = ?, ID_Producto = ?, 
                                                   FechaParo = ?, HoraInicio = ?, HoraFin = ?, 
                                                   TiempoMuerto = ?, PersonasAfectadas = ?, 
-                                                  MO = ?, ID_Proceso = ?, ID_Maquinaria = ?, 
+                                                  MO = ?, ID_Proceso = ?, ID_Maquinaria = ?, ID_Concepto = ?, 
                                                   Causa = ?, Diagnostico = ?, CausaRaiz = ?, SYNC = ? 
                                               WHERE ID_Paro = ?""",
                                            (id_cliente, orden_fabricacion, id_producto, 
                                             fecha_paro, hora_inicio, 
                                             hora_fin, tiempo_muerto, 
                                             personas_afectadas, mo, 
-                                            id_proceso, id_maquinaria, 
+                                            id_proceso, id_maquinaria, id_concepto,
                                             causa, diagnostico, causaraiz, True, registro.ID_Paro))
                             print(f"Registro {registro.ID_Paro} actualizado.")
                         else:
@@ -607,14 +608,14 @@ def sync_data_view(request):
                             cursor.execute("""INSERT INTO ParosProduccion (ID_Paro, ID_Cliente, OrdenFabricacionSAP, 
                                               ID_Producto, FechaParo, HoraInicio, HoraFin, 
                                               TiempoMuerto, PersonasAfectadas, MO, 
-                                              ID_Proceso, ID_Maquinaria, Causa, Diagnostico, CausaRaiz, SYNC) 
-                                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                              ID_Proceso, ID_Maquinaria, ID_Concepto, Causa, Diagnostico, CausaRaiz, SYNC) 
+                                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                                            (registro.ID_Paro, 
                                             id_cliente, orden_fabricacion, 
                                             id_producto, fecha_paro, 
                                             hora_inicio, hora_fin, 
                                             tiempo_muerto, personas_afectadas, 
-                                            mo, id_proceso, id_maquinaria, 
+                                            mo, id_proceso, id_maquinaria, id_concepto,
                                             causa, diagnostico, causaraiz, True))
                             cursor.execute("SET IDENTITY_INSERT ParosProduccion OFF")
                             print(f"Registro {registro.ID_Paro} insertado.")

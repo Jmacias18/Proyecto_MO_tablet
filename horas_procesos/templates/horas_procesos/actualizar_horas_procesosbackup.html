@@ -115,13 +115,10 @@
         font-size: 1rem; /* Ajustar el tamaño de fuente para que coincida con el encabezado <h4> */
     }
 
-    
     .large-select {
         width: 100%;
         min-width: 200px; /* Asegúrate de que tenga al menos este ancho */
     }
-    
-    
 </style>
 <br><br>
 <!-- Contenedor para mostrar alertas -->
@@ -945,22 +942,24 @@ document.querySelectorAll('input[name^="horaentrada_"], input[name^="horasalida_
                         <th>Fecha</th>
                         <th>Horarios</th>
                         <th>Inasistencia</th>
-                        {% for proceso in registros_combinados.0.procesos %}
-                        <th>
-                            <select name="proceso_{{ proceso.id_hrspro }}" class="form-select form-select-sm" data-original-value="{{ proceso.id_pro }}">
-                                <option value="0" {% if proceso.id_pro == 0 %}selected{% endif %}>Sin Proceso</option>
-                                {% for p in procesos %}
-                                <option value="{{ p.id_pro }}" {% if p.id_pro == proceso.id_pro %}selected{% endif %}>{{ p.nombre_pro }}</option>
-                                {% endfor %}
-                            </select>
-                            <select name="producto_{{ proceso.id_hrspro }}" class="form-select form-select-sm mb-2">
-                                <option value="" {% if proceso.id_producto is none %}selected{% endif %}>Sin Producto</option>
-                                {% for producto in productos %}
-                                <option value="{{ producto.ID_Producto }}" {% if producto.ID_Producto == proceso.id_producto %}selected{% endif %}>{{ producto.ID_Producto }} - {{ producto.DescripcionProd }} - {{ producto.Cliente }}</option>
-                                {% endfor %}
-                            </select>
-                        </th>
-                        {% endfor %}
+                        {% if registros_combinados %}
+                            {% for proceso in registros_combinados.0.procesos %}
+                            <th>
+                                <select name="proceso_{{ proceso.id_hrspro }}" class="form-select form-select-sm" data-original-value="{{ proceso.id_pro }}">
+                                    <option value="0" {% if proceso.id_pro == 0 %}selected{% endif %}>Sin Proceso</option>
+                                    {% for p in procesos %}
+                                    <option value="{{ p.id_pro }}" {% if p.id_pro == proceso.id_pro %}selected{% endif %}>{{ p.nombre_pro }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select name="producto_{{ proceso.id_hrspro }}" class="form-select form-select-sm mb-2">
+                                    <option value="" {% if proceso.id_producto is none %}selected{% endif %}>Sin Producto</option>
+                                    {% for producto in productos %}
+                                    <option value="{{ producto.ID_Producto }}" {% if producto.ID_Producto == proceso.id_producto %}selected{% endif %}>{{ producto.ID_Producto }} - {{ producto.DescripcionProd }} - {{ producto.Cliente }}</option>
+                                    {% endfor %}
+                                </select>
+                            </th>
+                            {% endfor %}
+                        {% endif %}
                         <th>Total Horas</th>
                         <th>Horas Extras</th>
                         <th>Creado Por:</th>
@@ -973,66 +972,64 @@ document.querySelectorAll('input[name^="horaentrada_"], input[name^="horasalida_
                 </thead>
                 <tbody>
                     {% for registro in registros_combinados %}
-                    <tr data-codigo-emp="{{ registro.codigo_emp }}">
-                        <td rowspan="{{ registro.procesos|length }}">{{ registro.codigo_emp }}</td>
-                        <td rowspan="{{ registro.procesos|length }}">{{ registro.nombre_emp }}</td>
-                        <td rowspan="{{ registro.procesos|length }}">{{ registro.depto_emp }}</td>
-                        <td rowspan="{{ registro.procesos|length }}">
-                            <p class="form-control-plaintext mb-2">{{ registro.procesos.0.fecha_hrspro }}</p> <!-- Mostrar la fecha como texto -->
-                        </td>
-                        <td rowspan="{{ registro.procesos|length }}">
-                            {% for turno in turnos %}
-                                {% if turno.id == registro.id_turno %}
-                                    <div>Turno: {{ turno.nombre }}</div>
-                                    <div>Horario: {{ turno.horario }}</div>
-                                    <div>Descanso: {{ turno.descanso }}</div>
-                                {% endif %}
-                            {% endfor %}
-                        </td>
-                        <td rowspan="{{ registro.procesos|length }}">
-                            <select name="tipo_inasistencia_{{ registro.procesos.0.id_hrspro }}" class="form-select form-select-sm">
-                                {% for tipo in tipos_inasistencia %}
-                                <option value="{{ tipo.ID_Asis }}" {% if registro.procesos.0.ID_Asis == tipo.ID_Asis %}selected{% endif %}>{{ tipo.Descripcion }}</option>
+                        <tr data-codigo-emp="{{ registro.codigo_emp }}">
+                            <td>{{ registro.codigo_emp }}</td>
+                            <td>{{ registro.nombre_emp }}</td>
+                            <td>{{ registro.depto_emp }}</td>
+                            <td>
+                                <p class="form-control-plaintext mb-2">{{ registro.procesos.0.fecha_hrspro }}</p>
+                            </td>
+                            <td>
+                                {% for turno in turnos %}
+                                    {% if turno.id == registro.id_turno %}
+                                        <div>Turno: {{ turno.nombre }}</div>
+                                        <div>Horario: {{ turno.horario }}</div>
+                                        <div>Descanso: {{ turno.descanso }}</div>
+                                    {% endif %}
                                 {% endfor %}
-                            </select>
-                        </td>
-                        {% for proceso in registro.procesos %}
-                        <td>
-                            <div class="d-flex flex-column">
-                                <input type="time" name="horaentrada_{{ proceso.id_hrspro }}" class="form-control form-control-sm mb-2"
-                                    value="{% if proceso.horaentrada == '00:00:00.0000000' %}00:00{% else %}{{ proceso.horaentrada|slice:":5" }}{% endif %}" 
-                                    step="60" data-original-value="{{ proceso.horaentrada }}">
-                                <input type="time" name="horasalida_{{ proceso.id_hrspro }}" class="form-control form-control-sm mb-2"
-                                    value="{% if proceso.horasalida == '00:00:00.0000000' %}00:00{% else %}{{ proceso.horasalida|slice:":5" }}{% endif %}" 
-                                    step="60" data-original-value="{{ proceso.horasalida }}">
-                            </div>
-                        </td>
-                        <td>
-                            <input type="text" name="hrs_{{ proceso.id_hrspro }}" class="form-control form-control-sm mb-2" 
-                                value="{{ proceso.hrs|floatformat:2 }}" data-original-value="{{ proceso.hrs|floatformat:2 }}" readonly disabled>
-                        </td>
-                        {% endfor %}
-                        <td rowspan="{{ registro.procesos|length }}">
-                            <input type="text" name="totalhrs_{{ registro.codigo_emp }}" class="form-control form-control-sm mb-2" 
-                                value="{{ registro.totalhrs|floatformat:2 }}" readonly disabled>
-                        </td>
-                        <td rowspan="{{ registro.procesos|length }}" class="td-hrsextras">
-                            <input type="number" name="totalhrsextras_{{ registro.codigo_emp }}" class="form-control form-control-sm mb-2 input-hrsextras" 
-                                value="{{ registro.totalhrsextras|floatformat:2 }}" min="0" step="0.01" readonly disabled>
-                        </td>
-                        <td rowspan="{{ registro.procesos|length }}">
-                            <p class="form-control-plaintext mb-2">{{ proceso.ucreado }}</p>
-                        </td>
-                        <td rowspan="{{ registro.procesos|length }}">
-                            <p class="form-control-plaintext mb-2">{% if proceso.umod %}{{ proceso.umod }}{% else %}NO MODFICADO{% endif %}</p>
-                        </td>
-                        <td rowspan="{{ registro.procesos|length }}">
-                            <p class="form-control-plaintext mb-2">{% if proceso.fmod %}{{ proceso.fmod }}{% else %}NO MODIFICADO{% endif %}</p>
-                        </td>
-                        <td>
-                            <input type="checkbox" class="eliminar-checkbox" name="eliminar_{{ proceso.id_hrspro }}" data-id="{{ proceso.id_hrspro }}">
-                        </td>
-                    </tr>
+                            </td>
+                            <td>
+                                <select name="tipo_inasistencia_{{ registro.procesos.0.id_hrspro }}" class="form-select form-select-sm">
+                                    {% for tipo in tipos_inasistencia %}
+                                    <option value="{{ tipo.ID_Asis }}" {% if registro.procesos.0.ID_Asis == tipo.ID_Asis %}selected{% endif %}>{{ tipo.Descripcion }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            {% for proceso in registro.procesos %}
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <input type="time" name="horaentrada_{{ proceso.id_hrspro }}" class="form-control form-control-sm mb-2"
+                                        value="{% if proceso.horaentrada == '00:00:00.0000000' %}00:00{% else %}{{ proceso.horaentrada|slice:":5" }}{% endif %}" 
+                                        step="60" data-original-value="{{ proceso.horaentrada }}">
+                                    <input type="time" name="horasalida_{{ proceso.id_hrspro }}" class="form-control form-control-sm mb-2"
+                                        value="{% if proceso.horasalida == '00:00:00.0000000' %}00:00{% else %}{{ proceso.horasalida|slice:":5" }}{% endif %}" 
+                                        step="60" data-original-value="{{ proceso.horasalida }}">
+                                    <input type="text" name="hrs_{{ proceso.id_hrspro }}" class="form-control form-control-sm mb-2" 
+                                        value="{{ proceso.hrs|floatformat:2 }}" data-original-value="{{ proceso.hrs|floatformat:2 }}" readonly disabled>
+                                </div>
+                            </td>
+                            {% endfor %}
+                            <td>
+                                <input type="text" name="totalhrs_{{ registro.codigo_emp }}" class="form-control form-control-sm mb-2" 
+                                    value="{{ registro.totalhrs|floatformat:2 }}" readonly disabled>
+                            </td>
+                            <td class="td-hrsextras">
+                                <input type="number" name="totalhrsextras_{{ registro.codigo_emp }}" class="form-control form-control-sm mb-2 input-hrsextras" 
+                                    value="{{ registro.totalhrsextras|floatformat:2 }}" min="0" step="0.01" readonly disabled>
+                            </td>
+                            <td>
+                                <p class="form-control-plaintext mb-2">{{ registro.procesos.0.ucreado }}</p>
+                            </td>
+                            <td>
+                                <p class="form-control-plaintext mb-2">{% if registro.procesos.0.umod %}{{ registro.procesos.0.umod }}{% else %}NO MODFICADO{% endif %}</p>
+                            </td>
+                            <td>
+                                <p class="form-control-plaintext mb-2">{% if registro.procesos.0.fmod %}{{ registro.procesos.0.fmod }}{% else %}NO MODIFICADO{% endif %}</p>
+                            </td>
+                            <td>
+                                <input type="checkbox" class="eliminar-checkbox" name="eliminar_{{ registro.procesos.0.id_hrspro }}" data-id="{{ registro.procesos.0.id_hrspro }}">
+                            </td>
+                        </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot>

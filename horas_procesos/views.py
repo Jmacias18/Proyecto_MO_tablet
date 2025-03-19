@@ -787,7 +787,6 @@ def actualizar_horas_procesos(request):
 
         # Crear una lista de registros combinados
         for codigo_emp, registros in registros_por_empleado.items():
-            totalhrs = sum(registro.hrs for registro in registros)  # Calcular totalhrs
             for registro in registros:
                 registro.descripcion_asistencia = id_a_descripcion.get(registro.ID_Asis, '')
             registro_combinado = {
@@ -796,7 +795,7 @@ def actualizar_horas_procesos(request):
                 'depto_emp': departamentos_dict.get(empleados_dict[codigo_emp], ''),
                 'id_turno': registros[0].codigo_emp.id_turno,  # Asegúrate de incluir el id_turno
                 'procesos': registros,
-                'totalhrs': totalhrs  # Incluir totalhrs en el registro combinado
+        
             }
             registros_combinados.append(registro_combinado)
 
